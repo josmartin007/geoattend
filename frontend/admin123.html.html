@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GeoAttend - Admin Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f5f5f5; }
+        
+        #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 9999; }
+        #loading.show { display: flex; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #dc3545; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .login-screen { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 20px; }
+        .login-box { background: white; padding: 40px; border-radius: 15px; width: 100%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
+        .admin-badge { text-align: center; margin-bottom: 20px; }
+        .admin-badge i { font-size: 60px; color: #dc3545; }
+        .login-box h2 { text-align: center; margin-bottom: 10px; color: #dc3545; font-size: 28px; }
+        .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 30px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #333; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #dc3545; }
+        
+        .login-btn { width: 100%; padding: 16px; background: #dc3545; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; }
+        .login-btn:hover { background: #c82333; }
+        
+        .dashboard { display: none; }
+        .dashboard.active { display: block; }
+        
+        header { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        header h1 { font-size: 20px; }
+        header button { background: white; color: #dc3545; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        
+        .content { padding: 15px; max-width: 1400px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        
+        .admin-tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #eee; overflow-x: auto; }
+        .admin-tabs button { padding: 10px 15px; border: none; background: none; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; white-space: nowrap; font-size: 14px; }
+        .admin-tabs button.active { color: #dc3545; border-bottom-color: #dc3545; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* NEW: Filter Section Styles */
+        .filter-section { 
+            background: #f8f9fa; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            border: 2px solid #e9ecef;
+        }
+        .filter-section h3 { 
+            margin-bottom: 15px; 
+            color: #dc3545; 
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+        }
+        .filter-item { 
+            display: flex; 
+            flex-direction: column; 
+        }
+        .filter-item label { 
+            font-weight: 600; 
+            font-size: 13px; 
+            margin-bottom: 5px; 
+            color: #495057;
+        }
+        .filter-item select { 
+            padding: 10px; 
+            border: 2px solid #dee2e6; 
+            border-radius: 6px; 
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+        .filter-item select:focus { 
+            outline: none; 
+            border-color: #dc3545; 
+        }
+        .filter-actions { 
+            display: flex; 
+            gap: 10px; 
+            margin-top: 15px; 
+        }
+        .filter-actions button { 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 14px;
+        }
+        .btn-filter { 
+            background: #dc3545; 
+            color: white; 
+        }
+        .btn-filter:hover { 
+            background: #c82333; 
+        }
+        .btn-clear { 
+            background: #6c757d; 
+            color: white; 
+        }
+        .btn-clear:hover { 
+            background: #5a6268; 
+        }
+        
+        .btn { background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin: 5px 5px 5px 0; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+        .btn:hover { background: #c82333; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-warning:hover { background: #e0a800; }
+        .btn-info { background: #17a2b8; }
+        .btn-info:hover { background: #138496; }
+        
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 25px; border-radius: 12px; }
+        .stat-card h3 { font-size: 13px; margin-bottom: 10px; opacity: 0.9; }
+        .stat-card p { font-size: 32px; font-weight: bold; }
+        
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 600px; }
+        table th, table td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        table th { background: #f8f9fa; font-weight: 600; }
+        table tr:hover { background: #f9f9f9; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 20px; overflow-y: auto; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; margin: auto; }
+        .modal-content h2 { margin-bottom: 20px; color: #dc3545; }
+        .close-modal { float: right; font-size: 28px; cursor: pointer; color: #999; line-height: 20px; }
+        .close-modal:hover { color: #333; }
+        
+        .action-buttons { display: flex; gap: 5px; flex-wrap: wrap; }
+        
+        .alert { padding: 12px; border-radius: 8px; margin: 15px 0; font-size: 14px; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
+        
+        @media (max-width: 768px) {
+            header h1 { font-size: 18px; }
+            .stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+            .stat-card { padding: 20px; }
+            .stat-card p { font-size: 28px; }
+            table th, table td { padding: 10px 6px; font-size: 13px; }
+            .btn { padding: 8px 16px; font-size: 13px; margin: 3px; }
+            .modal-content { padding: 20px; }
+            .admin-tabs { gap: 2px; }
+            .admin-tabs button { padding: 8px 12px; font-size: 13px; }
+            .filter-grid { grid-template-columns: 1fr; }
+        }
+
+@media (max-width: 1024px) {
+    .stats { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .filter-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+}
+
+@media (max-width: 768px) {
+    header { padding: 12px 15px; }
+    header h1 { font-size: 18px; }
+    .content { padding: 12px; }
+    .card { padding: 15px; }
+    .login-box { padding: 30px 20px; }
+    
+    .stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .stat-card { padding: 20px; }
+    .stat-card p { font-size: 28px; }
+    
+    .filter-grid { grid-template-columns: 1fr; gap: 12px; }
+    .filter-actions { flex-wrap: wrap; }
+    .filter-actions button { flex: 1; min-width: 120px; }
+    
+    .admin-tabs { gap: 2px; }
+    .admin-tabs button { padding: 8px 12px; font-size: 13px; }
+    
+    .btn { padding: 8px 16px; font-size: 13px; margin: 3px; }
+    
+    table th, table td { padding: 10px 6px; font-size: 13px; }
+    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    
+    .modal-content { padding: 20px; margin: 20px; }
+    .action-buttons { flex-direction: column; }
+    .action-buttons button { width: 100%; margin: 3px 0; }
+}
+
+@media (max-width: 480px) {
+    header h1 { font-size: 16px; }
+    .stats { grid-template-columns: 1fr; }
+    .filter-grid { grid-template-columns: 1fr; }
+    .filter-actions { flex-direction: column; }
+    .filter-actions button { width: 100%; }
+    .btn { width: 100%; justify-content: center; }
+    .admin-tabs button { font-size: 12px; padding: 8px 10px; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    button, .btn, input, select { min-height: 44px; font-size: 16px; }
+}
+    </style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div></div>
+
+<div id="login-screen" class="login-screen">
+    <div class="login-box">
+        <div class="admin-badge"><i class="fas fa-shield-alt"></i></div>
+        <h2>Admin Portal</h2>
+        <p class="subtitle">Full Management Access</p>
+        <form onsubmit="login(event)">
+            <div class="form-group">
+                <label><i class="fas fa-user-shield"></i> Username</label>
+                <input type="text" id="admin-user" value="admin" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i> Password</label>
+                <input type="password" id="admin-pass" value="pass" required>
+            </div>
+            <button type="submit" class="login-btn">Secure Login</button>
+        </form>
+    </div>
+</div>
+<div id="admin-dashboard" class="dashboard">
+    <header>
+        <h1><i class="fas fa-shield-alt"></i> Admin Dashboard</h1>
+        <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </header>
+    
+    <div class="content">
+        <div class="stats">
+            <div class="stat-card"><h3>Students</h3><p id="stat-students">0</p></div>
+            <div class="stat-card"><h3>Teachers</h3><p id="stat-teachers">0</p></div>
+            <div class="stat-card"><h3>Programs</h3><p id="stat-depts">0</p></div>
+        </div>
+        
+        <div class="card">
+            <div class="admin-tabs">
+                <button class="active" onclick="showTab('courses')">Programs</button>
+                <button onclick="showTab('users')">Users</button>
+                <button onclick="showTab('subjects')">Subjects</button>
+                <button onclick="showTab('classes')">Classes</button>
+                <button onclick="showTab('reports')">Reports</button>
+            </div>
+            
+            <!-- PROGRAMS TAB WITH FILTER -->
+            <div id="tab-courses" class="tab-content active">
+                <h2>Program Management</h2>
+                
+                <!-- NEW: Filter Section for Programs -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-filter"></i> Filter Programs</h3>
+                    <div class="filter-grid">
+                        <div class="filter-item">
+                            <label>Program Type</label>
+                            <select id="filter-dept-type">
+                                <option value="">All Types</option>
+                                <option value="UG">UG - Under Graduate</option>
+                                <option value="PG">PG - Post Graduate</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn-filter" onclick="applyDepartmentFilter()">
+                            <i class="fas fa-search"></i> Apply Filter
+                        </button>
+                        <button class="btn-clear" onclick="clearDepartmentFilter()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="openAddDeptModal()"><i class="fas fa-plus"></i> Add Program</button>
+                <button class="btn btn-success" onclick="document.getElementById('import-courses').click()"><i class="fas fa-file-import"></i> Import</button>
+                <input type="file" id="import-courses" accept=".csv,.xlsx" style="display:none" onchange="importCourses(event)">
+                
+                <div class="alert alert-info">
+                    <strong>📥 Import Format:</strong> Excel/CSV with columns: name, code, type (UG/PG)
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Name</th><th>Code</th><th>Type</th><th>Actions</th></tr></thead>
+                        <tbody id="depts-table"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- USERS TAB WITH FILTERS -->
+            <div id="tab-users" class="tab-content">
+                <h2>Users Management</h2>
+                
+                <!-- NEW: Filter Section for Users -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-filter"></i> Filter Users</h3>
+                    <div class="filter-grid">
+                        <div class="filter-item">
+                            <label>Role</label>
+                            <select id="filter-user-role" onchange="toggleUserFilterFields()">
+                                <option value="">All Roles</option>
+                                <option value="admin">Admin</option>
+                                <option value="teacher">Teacher</option>
+                                <option value="student">Student</option>
+                            </select>
+                        </div>
+                        <div class="filter-item" id="filter-user-dept-field">
+                            <label>Department</label>
+                            <select id="filter-user-dept">
+                                <option value="">All Departments</option>
+                            </select>
+                        </div>
+                        <div class="filter-item" id="filter-user-sem-field" style="display:none;">
+                            <label>Semester</label>
+                            <select id="filter-user-semester">
+                                <option value="">All Semesters</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                                <option value="3">Semester 3</option>
+                                <option value="4">Semester 4</option>
+                                <option value="5">Semester 5</option>
+                                <option value="6">Semester 6</option>
+                                <option value="7">Semester 7</option>
+                                <option value="8">Semester 8</option>
+                            </select>
+                        </div>
+                        <div class="filter-item" id="filter-user-program-field" style="display:none;">
+                            <label>Program Type</label>
+                            <select id="filter-user-program">
+                                <option value="">All Programs</option>
+                                <option value="UG">UG</option>
+                                <option value="PG">PG</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn-filter" onclick="applyUserFilter()">
+                            <i class="fas fa-search"></i> Apply Filter
+                        </button>
+                        <button class="btn-clear" onclick="clearUserFilter()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="openAddUserModal()"><i class="fas fa-plus"></i> Add User</button>
+                <button class="btn btn-success" onclick="document.getElementById('import-users').click()"><i class="fas fa-file-import"></i> Import</button>
+                <input type="file" id="import-users" accept=".csv,.xlsx" style="display:none" onchange="importUsers(event)">
+                
+                <div class="alert alert-info">
+                    <strong>📥 Import Format:</strong> Excel/CSV with columns: name, username, password, role, department_id, roll_number, semester, year
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Name</th><th>Roll No</th><th>Username</th><th>Role</th><th>Course</th><th>Sem</th><th>Actions</th></tr></thead>
+                        <tbody id="users-table"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- SUBJECTS TAB WITH FILTERS -->
+            <div id="tab-subjects" class="tab-content">
+                <h2>Subjects Management</h2>
+                
+                <!-- NEW: Filter Section for Subjects -->
+<div class="filter-section">
+    <h3><i class="fas fa-filter"></i> Filter Subjects</h3>
+    <div class="filter-grid">
+        <div class="filter-item">
+            <label>Department</label>
+            <select id="filter-subject-dept">
+                <option value="">All Departments</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label>Semester</label>
+            <select id="filter-subject-semester">
+                <option value="">All Semesters</option>
+                <option value="1">Semester 1</option>
+                <option value="2">Semester 2</option>
+                <option value="3">Semester 3</option>
+                <option value="4">Semester 4</option>
+                <option value="5">Semester 5</option>
+                <option value="6">Semester 6</option>
+                <option value="7">Semester 7</option>
+                <option value="8">Semester 8</option>
+            </select>
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button class="btn-filter" onclick="applySubjectFilter()">
+            <i class="fas fa-search"></i> Apply Filter
+        </button>
+        <button class="btn-clear" onclick="clearSubjectFilter()">
+            <i class="fas fa-times"></i> Clear
+        </button>
+    </div>
+</div>                
+                <button class="btn" onclick="openAddSubjectModal()"><i class="fas fa-plus"></i> Add Subject</button>
+                <button class="btn btn-success" onclick="document.getElementById('import-subjects').click()"><i class="fas fa-file-import"></i> Import</button>
+                <input type="file" id="import-subjects" accept=".csv,.xlsx" style="display:none" onchange="importSubjects(event)">
+                
+                <div class="alert alert-info">
+                    <strong>📥 Import Format:</strong> Excel/CSV with columns: name, code, department_id, semester
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Name</th><th>Code</th><th>Course</th><th>Semester</th><th>Teachers</th><th>Actions</th></tr></thead>
+                        <tbody id="subjects-table"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- CLASSES TAB (NO FILTER NEEDED) -->
+            <div id="tab-classes" class="tab-content">
+                <h2>Classes/Rooms Management</h2>
+                <button class="btn" onclick="openAddClassModal()"><i class="fas fa-plus"></i> Add Class</button>
+                <button class="btn btn-success" onclick="document.getElementById('import-classes').click()"><i class="fas fa-file-import"></i> Import</button>
+                <input type="file" id="import-classes" accept=".csv,.xlsx" style="display:none" onchange="importClasses(event)">
+                
+                <div class="alert alert-info">
+                    <strong>📥 Import Format:</strong> Excel/CSV with columns: name, code, building, room_number, latitude, longitude, geo_radius
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Name</th><th>Building</th><th>Room</th><th>GPS Coordinates</th><th>Actions</th></tr></thead>
+                        <tbody id="classes-table"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- REPORTS TAB -->
+            <div id="tab-reports" class="tab-content">
+                <h2>📊 Attendance Reports</h2>
+                <div class="form-group">
+                    <label>Select Course</label>
+                    <select id="report-dept"></select>
+                </div>
+                <div class="form-group">
+                    <label>Select Semester (Optional)</label>
+                    <select id="report-sem">
+                        <option value="">All Semesters</option>
+                        <option value="1">Semester 1</option>
+                        <option value="2">Semester 2</option>
+                        <option value="3">Semester 3</option>
+                        <option value="4">Semester 4</option>
+                        <option value="5">Semester 5</option>
+                        <option value="6">Semester 6</option>
+                        <option value="7">Semester 7</option>
+                        <option value="8">Semester 8</option>
+                    </select>
+                </div>
+                <button class="btn btn-info" onclick="generateReport()"><i class="fas fa-file-download"></i> Generate & Export Excel</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Add/Edit Course Modal -->
+<div id="modal-dept" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal('modal-dept')">&times;</span>
+        <h2 id="dept-modal-title">Add Program</h2>
+        <input type="hidden" id="dept-id">
+        <div class="form-group"><label>Name</label><input type="text" id="dept-name"></div>
+        <div class="form-group"><label>Code</label><input type="text" id="dept-code"></div>
+        <div class="form-group">
+            <label>Type</label>
+            <select id="dept-type">
+                <option value="UG">UG - Under Graduate</option>
+                <option value="PG">PG - Post Graduate</option>
+            </select>
+        </div>
+        <button class="btn" onclick="saveDepartment()"><i class="fas fa-save"></i> Save Course</button>
+    </div>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div id="modal-user" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal('modal-user')">&times;</span>
+        <h2 id="user-modal-title">Add User</h2>
+        <input type="hidden" id="user-id">
+        <div class="form-group"><label>Name</label><input type="text" id="user-name"></div>
+        <div class="form-group"><label>Username</label><input type="text" id="user-username"></div>
+        <div class="form-group"><label>Password <small>(leave empty to keep current)</small></label><input type="password" id="user-password"></div>
+        <div class="form-group">
+            <label>Role</label>
+            <select id="user-role" onchange="toggleUserFields()">
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+        <div class="form-group" id="user-dept-field">
+            <label>Course</label>
+            <select id="user-dept"></select>
+        </div>
+        <div class="form-group" id="user-roll-field">
+            <label>Roll Number</label>
+            <input type="text" id="user-roll" placeholder="e.g., CSUG101">
+        </div>
+        <div class="form-group" id="user-sem-field">
+            <label>Semester</label>
+            <select id="user-sem">
+                <option value="">-- Select --</option>
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+        </div>
+        <div class="form-group" id="user-year-field">
+            <label>Year</label>
+            <select id="user-year">
+                <option value="">-- Select --</option>
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+            </select>
+        </div>
+        <div class="form-group" id="user-subjects-field" style="display:none;">
+            <label>Assign Subjects (Hold Ctrl for multiple)</label>
+            <select id="user-subjects" multiple style="height:120px;"></select>
+        </div>
+        <button class="btn" onclick="saveUser()"><i class="fas fa-save"></i> Save User</button>
+    </div>
+</div>
+
+<!-- Add/Edit Subject Modal -->
+<div id="modal-subject" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal('modal-subject')">&times;</span>
+        <h2 id="subject-modal-title">Add Subject</h2>
+        <input type="hidden" id="subject-id">
+        <div class="form-group"><label>Name</label><input type="text" id="subject-name"></div>
+        <div class="form-group"><label>Code</label><input type="text" id="subject-code"></div>
+        <div class="form-group">
+            <label>Course</label>
+            <select id="subject-dept"></select>
+        </div>
+        <div class="form-group">
+            <label>Semester</label>
+            <select id="subject-sem">
+                <option value="">-- Select --</option>
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Assign Teachers (Hold Ctrl for multiple)</label>
+            <select id="subject-teachers" multiple style="height:120px;"></select>
+        </div>
+        <button class="btn" onclick="saveSubject()"><i class="fas fa-save"></i> Save Subject</button>
+    </div>
+</div>
+
+<!-- Add/Edit Class Modal -->
+<div id="modal-class" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal('modal-class')">&times;</span>
+        <h2 id="class-modal-title">Add Class/Room</h2>
+        <input type="hidden" id="class-id">
+        <div class="form-group"><label>Name</label><input type="text" id="class-name"></div>
+        <div class="form-group"><label>Code</label><input type="text" id="class-code"></div>
+        <div class="form-group"><label>Building</label><input type="text" id="class-building"></div>
+        <div class="form-group"><label>Room Number</label><input type="text" id="class-room"></div>
+        <div class="form-group"><label>Latitude</label><input type="number" step="0.0000001" id="class-lat"></div>
+        <div class="form-group"><label>Longitude</label><input type="number" step="0.0000001" id="class-lng"></div>
+        <div class="form-group"><label>Geo Radius (meters)</label><input type="number" id="class-radius" value="100"></div>
+        <button class="btn btn-secondary" onclick="getMyLocation()"><i class="fas fa-map-marker-alt"></i> Use My Location</button>
+        <button class="btn" onclick="saveClass()"><i class="fas fa-save"></i> Save Class</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const API = 'http://localhost:3000/api';
+let token, currentUser;
+// Store all data for filtering
+let allDepartments = [];
+let allUsers = [];
+let allSubjects = [];
+
+function loading(show) { 
+    document.getElementById('loading').classList.toggle('show', show); 
+}
+
+async function api(endpoint, method, data) {
+    const options = { 
+        method: method || 'GET', 
+        headers: { 'Content-Type': 'application/json' } 
+    };
+    if (token) options.headers['Authorization'] = 'Bearer ' + token;
+    if (data) options.body = JSON.stringify(data);
+    
+    const response = await fetch(API + endpoint, options);
+    if (!response.ok) throw new Error(await response.text() || 'Request failed');
+    return await response.json();
+}
+
+async function login(event) {
+    event.preventDefault();
+    loading(true);
+    
+    try {
+        const result = await api('/auth/login', 'POST', {
+            username: document.getElementById('admin-user').value,
+            password: document.getElementById('admin-pass').value,
+            role: 'admin'
+        });
+        
+        if (result.success) {
+            token = result.token;
+            currentUser = result.user;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('admin-dashboard').classList.add('active');
+            await loadDashboard();
+        }
+    } catch (error) {
+        alert('❌ Login failed: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+function logout() {
+    token = currentUser = null;
+    allDepartments = [];
+    allUsers = [];
+    allSubjects = [];
+    document.getElementById('admin-dashboard').classList.remove('active');
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('admin-user').value = '';
+    document.getElementById('admin-pass').value = '';
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.admin-tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+    
+    if (tab === 'courses') loadDepartments();
+    else if (tab === 'users') loadUsers();
+    else if (tab === 'subjects') loadSubjects();
+    else if (tab === 'classes') loadClasses();
+    else if (tab === 'reports') loadReportDropdowns();
+}
+
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+async function loadDashboard() {
+    try {
+        const stats = await api('/admin/dashboard/stats');
+        document.getElementById('stat-students').textContent = stats.totalStudents || 0;
+        document.getElementById('stat-teachers').textContent = stats.totalTeachers || 0;
+        document.getElementById('stat-depts').textContent = stats.totalDepartments || 0;
+        await loadDepartments();
+    } catch (error) {
+        console.error('Dashboard error:', error);
+    }
+}
+// ================== DEPARTMENTS/COURSES WITH FILTER ==================
+async function loadDepartments() {
+    try {
+        loading(true);
+        const depts = await api('/admin/departments');
+        allDepartments = depts; // Store for filtering
+        displayDepartments(allDepartments);
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+function displayDepartments(depts) {
+    const tbody = document.getElementById('depts-table');
+    tbody.innerHTML = depts.length ? depts.map(d => `
+        <tr>
+            <td>${d.name}</td>
+            <td>${d.code}</td>
+            <td><span style="background: ${d.program_type === 'UG' ? '#28a745' : '#17a2b8'}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">${d.program_type}</span></td>
+            <td class="action-buttons">
+                <button class="btn btn-warning" onclick='editDepartment(${JSON.stringify(d).replace(/'/g, "&apos;")})'><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn btn-danger" onclick="deleteDepartment(${d.id}, '${d.name.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i> Delete</button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="4" style="text-align:center; padding: 30px; color: #999;">No departments found</td></tr>';
+}
+
+// NEW: Apply Department Filter
+function applyDepartmentFilter() {
+    const typeFilter = document.getElementById('filter-dept-type').value;
+    
+    let filtered = allDepartments;
+    
+    // Filter by type
+    if (typeFilter) {
+        filtered = filtered.filter(d => d.program_type === typeFilter);
+    }
+    
+    displayDepartments(filtered);
+}
+
+// NEW: Clear Department Filter
+function clearDepartmentFilter() {
+    document.getElementById('filter-dept-type').value = '';
+    displayDepartments(allDepartments);
+}
+
+function openAddDeptModal() {
+    document.getElementById('dept-modal-title').textContent = 'Add Program';
+    document.getElementById('dept-id').value = '';
+    document.getElementById('dept-name').value = '';
+    document.getElementById('dept-code').value = '';
+    document.getElementById('dept-type').value = 'UG';
+    document.getElementById('modal-dept').style.display = 'flex';
+}
+
+function editDepartment(dept) {
+    document.getElementById('dept-modal-title').textContent = 'Edit Course';
+    document.getElementById('dept-id').value = dept.id;
+    document.getElementById('dept-name').value = dept.name;
+    document.getElementById('dept-code').value = dept.code;
+    document.getElementById('dept-type').value = dept.program_type;
+    document.getElementById('modal-dept').style.display = 'flex';
+}
+
+async function saveDepartment() {
+    const id = document.getElementById('dept-id').value;
+    const name = document.getElementById('dept-name').value;
+    const code = document.getElementById('dept-code').value;
+    const type = document.getElementById('dept-type').value;
+    
+    if (!name || !code) {
+        alert('Please fill all fields');
+        return;
+    }
+    
+    try {
+        loading(true);
+        if (id) {
+            await api('/admin/departments/' + id, 'PUT', { name, code, program_type: type });
+            alert('✅ Course updated!');
+        } else {
+            await api('/admin/departments', 'POST', { name, code, program_type: type });
+            alert('✅ Course added!');
+        }
+        closeModal('modal-dept');
+        await loadDepartments();
+        await loadDashboard();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+async function deleteDepartment(id, name) {
+    if (!confirm(`Delete course "${name}"?`)) return;
+    try {
+        loading(true);
+        await api('/admin/departments/' + id, 'DELETE');
+        alert('✅ Course deleted!');
+        await loadDepartments();
+        await loadDashboard();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+// ================== USERS WITH FILTER ==================
+async function loadUsers() {
+    try {
+        loading(true);
+        const users = await api('/admin/users');
+        allUsers = users; // Store for filtering
+        
+        // Load filter dropdowns
+        await loadUserFilterDropdowns();
+        
+        displayUsers(allUsers);
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+async function loadUserFilterDropdowns() {
+    try {
+        const depts = await api('/admin/departments');
+        const filterDept = document.getElementById('filter-user-dept');
+        
+        filterDept.innerHTML = '<option value="">All Departments</option>' + 
+            depts.map(d => `<option value="${d.id}">${d.name} (${d.program_type})</option>`).join('');
+    } catch (error) {
+        console.error('Error loading filter dropdowns:', error);
+    }
+}
+
+function displayUsers(users) {
+    const tbody = document.getElementById('users-table');
+    tbody.innerHTML = users.length ? users.map(u => `
+        <tr>
+            <td>${u.name}</td>
+            <td>${u.roll_number || '-'}</td>
+            <td>${u.username}</td>
+            <td><span style="background: ${u.role === 'admin' ? '#dc3545' : u.role === 'teacher' ? '#ffc107' : '#28a745'}; color: ${u.role === 'teacher' ? '#333' : 'white'}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">${u.role.toUpperCase()}</span></td>
+            <td>${u.dept_name || 'N/A'}</td>
+            <td>${u.role === 'student' ? (u.semester || '-') : '-'}</td>
+            <td class="action-buttons">
+                <button class="btn btn-warning" onclick='editUser(${JSON.stringify(u).replace(/'/g, "&apos;")})'><i class="fas fa-edit"></i> Edit</button>
+                ${(u.role !== 'admin' || u.username !== 'admin') ? `<button class="btn btn-danger" onclick="deleteUser(${u.id}, '${u.name.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i> Delete</button>` : '<span style="color:#999;font-size:12px;">Protected</span>'}
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="7" style="text-align:center; padding: 30px; color: #999;">No users found</td></tr>';
+}
+
+// NEW: Toggle User Filter Fields based on role selection
+function toggleUserFilterFields() {
+    const role = document.getElementById('filter-user-role').value;
+    const deptField = document.getElementById('filter-user-dept-field');
+    const semField = document.getElementById('filter-user-sem-field');
+    const programField = document.getElementById('filter-user-program-field');
+    
+    if (role === 'admin') {
+        deptField.style.display = 'none';
+        semField.style.display = 'none';
+        programField.style.display = 'none';
+    } else if (role === 'student') {
+        deptField.style.display = 'block';
+        semField.style.display = 'block';
+        programField.style.display = 'block';
+    } else if (role === 'teacher') {
+        deptField.style.display = 'block';
+        semField.style.display = 'none';
+        programField.style.display = 'block';
+    } else {
+        deptField.style.display = 'block';
+        semField.style.display = 'block';
+        programField.style.display = 'block';
+    }
+}
+
+// NEW: Apply User Filter
+function applyUserFilter() {
+    const roleFilter = document.getElementById('filter-user-role').value;
+    const deptFilter = document.getElementById('filter-user-dept').value;
+    const semesterFilter = document.getElementById('filter-user-semester').value;
+    const programFilter = document.getElementById('filter-user-program').value;
+    
+    let filtered = allUsers;
+    
+    // Filter by role
+    if (roleFilter) {
+        filtered = filtered.filter(u => u.role === roleFilter);
+    }
+    
+    // Filter by department
+    if (deptFilter) {
+        filtered = filtered.filter(u => u.department_id == deptFilter);
+    }
+    
+    // Filter by semester (only for students)
+    if (semesterFilter) {
+        filtered = filtered.filter(u => u.semester == semesterFilter);
+    }
+    
+    // Filter by program type
+    if (programFilter) {
+        // Need to check department's program_type
+        const depts = allDepartments.filter(d => d.program_type === programFilter);
+        const deptIds = depts.map(d => d.id);
+        filtered = filtered.filter(u => deptIds.includes(u.department_id));
+    }
+    
+    displayUsers(filtered);
+}
+
+// NEW: Clear User Filter
+function clearUserFilter() {
+    document.getElementById('filter-user-role').value = '';
+    document.getElementById('filter-user-dept').value = '';
+    document.getElementById('filter-user-semester').value = '';
+    document.getElementById('filter-user-program').value = '';
+    toggleUserFilterFields();
+    displayUsers(allUsers);
+}
+
+async function openAddUserModal() {
+    document.getElementById('user-modal-title').textContent = 'Add User';
+    document.getElementById('user-id').value = '';
+    document.getElementById('user-name').value = '';
+    document.getElementById('user-username').value = '';
+    document.getElementById('user-password').value = '';
+    document.getElementById('user-roll').value = '';
+    document.getElementById('user-role').value = 'student';
+    document.getElementById('user-sem').value = '';
+    document.getElementById('user-year').value = '';
+    await loadDepartmentsDropdown();
+    await loadSubjectsDropdown();
+    toggleUserFields();
+    document.getElementById('modal-user').style.display = 'flex';
+}
+
+async function editUser(user) {
+    document.getElementById('user-modal-title').textContent = 'Edit User';
+    document.getElementById('user-id').value = user.id;
+    document.getElementById('user-name').value = user.name;
+    document.getElementById('user-username').value = user.username;
+    document.getElementById('user-password').value = '';
+    document.getElementById('user-password').placeholder = 'Leave empty to keep current password';
+    document.getElementById('user-roll').value = user.roll_number || '';
+    document.getElementById('user-role').value = user.role;
+    await loadDepartmentsDropdown();
+    await loadSubjectsDropdown();
+    document.getElementById('user-dept').value = user.department_id || '';
+    document.getElementById('user-sem').value = user.semester || '';
+    document.getElementById('user-year').value = user.year || '';
+    toggleUserFields();
+    document.getElementById('modal-user').style.display = 'flex';
+}
+
+function toggleUserFields() {
+    const role = document.getElementById('user-role').value;
+    document.getElementById('user-dept-field').style.display = role === 'admin' ? 'none' : 'block';
+    document.getElementById('user-roll-field').style.display = role === 'student' ? 'block' : 'none';
+    document.getElementById('user-sem-field').style.display = role === 'student' ? 'block' : 'none';
+    document.getElementById('user-year-field').style.display = role === 'student' ? 'block' : 'none';
+    document.getElementById('user-subjects-field').style.display = role === 'teacher' ? 'block' : 'none';
+}
+
+async function saveUser() {
+    const id = document.getElementById('user-id').value;
+    const name = document.getElementById('user-name').value;
+    const username = document.getElementById('user-username').value;
+    const password = document.getElementById('user-password').value;
+    const role = document.getElementById('user-role').value;
+    const deptId = document.getElementById('user-dept').value;
+    const rollNo = document.getElementById('user-roll').value;
+    const semester = document.getElementById('user-sem').value;
+    const year = document.getElementById('user-year').value;
+    
+    if (!name || !username || (!id && !password)) {
+        alert('Please fill required fields');
+        return;
+    }
+    
+    if (role !== 'admin' && !deptId) {
+        alert('Please select a course');
+        return;
+    }
+    
+    try {
+        loading(true);
+        let subject_ids = [];
+        if (role === 'teacher') {
+            const selected = document.getElementById('user-subjects').selectedOptions;
+            subject_ids = Array.from(selected).map(opt => parseInt(opt.value));
+        }
+        
+        const data = {
+            name, username, role,
+            department_id: deptId || null,
+            roll_number: rollNo || null,
+            semester: semester || null,
+            year: year || null,
+            subject_ids
+        };
+        
+        if (password) data.password = password;
+        
+        if (id) {
+            await api('/admin/users/' + id, 'PUT', data);
+            alert('✅ User updated!');
+        } else {
+            data.password = password;
+            await api('/admin/users', 'POST', data);
+            alert('✅ User added!');
+        }
+        
+        closeModal('modal-user');
+        await loadUsers();
+        await loadDashboard();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+async function deleteUser(id, name) {
+    if (!confirm(`Delete user "${name}"?`)) return;
+    try {
+        loading(true);
+        await api('/admin/users/' + id, 'DELETE');
+        alert('✅ User deleted!');
+        await loadUsers();
+        await loadDashboard();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+// ================== SUBJECTS WITH FILTER ==================
+async function loadSubjects() {
+    try {
+        loading(true);
+        const subjects = await api('/admin/subjects');
+        allSubjects = subjects; // Store for filtering
+        
+        // Load filter dropdowns
+        await loadSubjectFilterDropdowns();
+        
+        displaySubjects(allSubjects);
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+async function loadSubjectFilterDropdowns() {
+    try {
+        const depts = await api('/admin/departments');
+        const filterDept = document.getElementById('filter-subject-dept');
+        
+        filterDept.innerHTML = '<option value="">All Departments</option>' + 
+            depts.map(d => `<option value="${d.id}">${d.name} (${d.program_type})</option>`).join('');
+    } catch (error) {
+        console.error('Error loading filter dropdowns:', error);
+    }
+}
+
+function displaySubjects(subjects) {
+    const tbody = document.getElementById('subjects-table');
+    tbody.innerHTML = subjects.length ? subjects.map(s => `
+        <tr>
+            <td>${s.name}</td>
+            <td><span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">${s.code}</span></td>
+            <td>${s.dept_name || 'N/A'}</td>
+            <td>${s.semester ? `<span style="background: #28a745; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">Sem ${s.semester}</span>` : '-'}</td>
+            <td>${s.teacher_names || '<span style="color: #999;">Not assigned</span>'}</td>
+            <td class="action-buttons">
+                <button class="btn btn-warning" onclick='editSubject(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn btn-danger" onclick="deleteSubject(${s.id}, '${s.name.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i> Delete</button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="6" style="text-align:center; padding: 30px; color: #999;">No subjects found</td></tr>';
+}
+
+// NEW: Apply Subject Filter (SIMPLIFIED - No Program Type)
+function applySubjectFilter() {
+    const deptFilter = document.getElementById('filter-subject-dept').value;
+    const semesterFilter = document.getElementById('filter-subject-semester').value;
+    
+    let filtered = allSubjects;
+    
+    // Filter by department (already includes UG/PG in dropdown)
+    if (deptFilter) {
+        filtered = filtered.filter(s => s.department_id == deptFilter);
+    }
+    
+    // Filter by semester
+    if (semesterFilter) {
+        filtered = filtered.filter(s => s.semester == semesterFilter);
+    }
+    
+    displaySubjects(filtered);
+}
+
+// NEW: Clear Subject Filter (SIMPLIFIED)
+function clearSubjectFilter() {
+    document.getElementById('filter-subject-dept').value = '';
+    document.getElementById('filter-subject-semester').value = '';
+    displaySubjects(allSubjects);
+}
+async function openAddSubjectModal() {
+    document.getElementById('subject-modal-title').textContent = 'Add Subject';
+    document.getElementById('subject-id').value = '';
+    document.getElementById('subject-name').value = '';
+    document.getElementById('subject-code').value = '';
+    document.getElementById('subject-sem').value = '';
+    await loadDepartmentsDropdown();
+    await loadTeachersDropdown();
+    document.getElementById('modal-subject').style.display = 'flex';
+}
+
+async function editSubject(subject) {
+    document.getElementById('subject-modal-title').textContent = 'Edit Subject';
+    document.getElementById('subject-id').value = subject.id;
+    document.getElementById('subject-name').value = subject.name;
+    document.getElementById('subject-code').value = subject.code;
+    await loadDepartmentsDropdown();
+    await loadTeachersDropdown();
+    document.getElementById('subject-dept').value = subject.department_id || '';
+    document.getElementById('subject-sem').value = subject.semester || '';
+    document.getElementById('modal-subject').style.display = 'flex';
+}
+
+async function saveSubject() {
+    const id = document.getElementById('subject-id').value;
+    const name = document.getElementById('subject-name').value;
+    const code = document.getElementById('subject-code').value;
+    const deptId = document.getElementById('subject-dept').value;
+    const semester = document.getElementById('subject-sem').value;
+    
+    if (!name || !code || !deptId) {
+        alert('Please fill required fields');
+        return;
+    }
+    
+    try {
+        loading(true);
+        const selected = document.getElementById('subject-teachers').selectedOptions;
+        const teacher_ids = Array.from(selected).map(opt => parseInt(opt.value));
+        
+        const data = {
+            name, code,
+            department_id: deptId,
+            semester: semester || null,
+            teacher_ids
+        };
+        
+        if (id) {
+            await api('/admin/subjects/' + id, 'PUT', data);
+            alert('✅ Subject updated!');
+        } else {
+            await api('/admin/subjects', 'POST', data);
+            alert('✅ Subject added!');
+        }
+        
+        closeModal('modal-subject');
+        await loadSubjects();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+async function deleteSubject(id, name) {
+    if (!confirm(`Delete subject "${name}"?`)) return;
+    try {
+        loading(true);
+        await api('/admin/subjects/' + id, 'DELETE');
+        alert('✅ Subject deleted!');
+        await loadSubjects();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+// ================== CLASSES (NO FILTER NEEDED) ==================
+async function loadClasses() {
+    try {
+        loading(true);
+        const classes = await api('/admin/classes');
+        const tbody = document.getElementById('classes-table');
+        tbody.innerHTML = classes.length ? classes.map(c => `
+            <tr>
+                <td>${c.name}</td>
+                <td>${c.building}</td>
+                <td>${c.room_number}</td>
+                <td><span style="font-size: 12px; color: #666;">${c.latitude}, ${c.longitude}</span><br><span style="background: #17a2b8; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">${c.geo_radius}m radius</span></td>
+                <td class="action-buttons">
+                    <button class="btn btn-warning" onclick='editClass(${JSON.stringify(c).replace(/'/g, "&apos;")})'><i class="fas fa-edit"></i> Edit</button>
+                    <button class="btn btn-danger" onclick="deleteClass(${c.id}, '${c.name.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i> Delete</button>
+                </td>
+            </tr>
+        `).join('') : '<tr><td colspan="5" style="text-align:center; padding: 30px; color: #999;">No classes yet</td></tr>';
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+function openAddClassModal() {
+    document.getElementById('class-modal-title').textContent = 'Add Class/Room';
+    document.getElementById('class-id').value = '';
+    document.getElementById('class-name').value = '';
+    document.getElementById('class-code').value = '';
+    document.getElementById('class-building').value = '';
+    document.getElementById('class-room').value = '';
+    document.getElementById('class-lat').value = '';
+    document.getElementById('class-lng').value = '';
+    document.getElementById('class-radius').value = '100';
+    document.getElementById('modal-class').style.display = 'flex';
+}
+
+function editClass(cls) {
+    document.getElementById('class-modal-title').textContent = 'Edit Class/Room';
+    document.getElementById('class-id').value = cls.id;
+    document.getElementById('class-name').value = cls.name;
+    document.getElementById('class-code').value = cls.code;
+    document.getElementById('class-building').value = cls.building;
+    document.getElementById('class-room').value = cls.room_number;
+    document.getElementById('class-lat').value = cls.latitude;
+    document.getElementById('class-lng').value = cls.longitude;
+    document.getElementById('class-radius').value = cls.geo_radius;
+    document.getElementById('modal-class').style.display = 'flex';
+}
+
+async function saveClass() {
+    const id = document.getElementById('class-id').value;
+    const name = document.getElementById('class-name').value;
+    const code = document.getElementById('class-code').value;
+    const building = document.getElementById('class-building').value;
+    const room = document.getElementById('class-room').value;
+    const lat = document.getElementById('class-lat').value;
+    const lng = document.getElementById('class-lng').value;
+    const radius = document.getElementById('class-radius').value;
+    
+    if (!name || !code || !lat || !lng) {
+        alert('Please fill all required fields');
+        return;
+    }
+    
+    try {
+        loading(true);
+        const data = {
+            name, code, building,
+            room_number: room,
+            latitude: lat,
+            longitude: lng,
+            geo_radius: radius
+        };
+        
+        if (id) {
+            await api('/admin/classes/' + id, 'PUT', data);
+            alert('✅ Class updated!');
+        } else {
+            await api('/admin/classes', 'POST', data);
+            alert('✅ Class added!');
+        }
+        
+        closeModal('modal-class');
+        await loadClasses();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+async function deleteClass(id, name) {
+    if (!confirm(`Delete class "${name}"?`)) return;
+    try {
+        loading(true);
+        await api('/admin/classes/' + id, 'DELETE');
+        alert('✅ Class deleted!');
+        await loadClasses();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+function getMyLocation() {
+    loading(true);
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            document.getElementById('class-lat').value = pos.coords.latitude.toFixed(7);
+            document.getElementById('class-lng').value = pos.coords.longitude.toFixed(7);
+            alert('✅ Location captured!');
+            loading(false);
+        },
+        error => {
+            alert('❌ Error: ' + error.message);
+            loading(false);
+        },
+        { enableHighAccuracy: true, timeout: 30000 }
+    );
+}
+
+// ================== HELPER FUNCTIONS ==================
+async function loadDepartmentsDropdown() {
+    try {
+        const depts = await api('/admin/departments');
+        allDepartments = depts; // Store globally for filters
+        
+        const userDept = document.getElementById('user-dept');
+        const subjectDept = document.getElementById('subject-dept');
+        const reportDept = document.getElementById('report-dept');
+        
+        const html = '<option value="">-- Select Course --</option>' + 
+            depts.map(d => `<option value="${d.id}">${d.name} (${d.program_type})</option>`).join('');
+        
+        if (userDept) userDept.innerHTML = html;
+        if (subjectDept) subjectDept.innerHTML = html;
+        if (reportDept) reportDept.innerHTML = html;
+    } catch (error) {
+        console.error('Error loading courses dropdown:', error);
+    }
+}
+
+async function loadSubjectsDropdown() {
+    try {
+        const subjects = await api('/admin/subjects');
+        const select = document.getElementById('user-subjects');
+        if (select) {
+            select.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name} (${s.code})</option>`).join('');
+        }
+    } catch (error) {
+        console.error('Error loading subjects dropdown:', error);
+    }
+}
+
+async function loadTeachersDropdown() {
+    try {
+        const users = await api('/admin/users');
+        const teachers = users.filter(u => u.role === 'teacher');
+        const select = document.getElementById('subject-teachers');
+        if (select) {
+            select.innerHTML = teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        }
+    } catch (error) {
+        console.error('Error loading teachers dropdown:', error);
+    }
+}
+
+async function loadReportDropdowns() {
+    await loadDepartmentsDropdown();
+}
+// ================== IMPORT FUNCTIONS ==================
+async function importCourses(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    loading(true);
+    try {
+        const data = await readExcelFile(file);
+        if (!data || data.length === 0) {
+            alert('No data found in file');
+            return;
+        }
+        
+        let imported = 0, errors = 0;
+        for (const row of data) {
+            if (row.name && row.code && row.type) {
+                try {
+                    await api('/admin/departments', 'POST', {
+                        name: row.name,
+                        code: row.code,
+                        program_type: row.type
+                    });
+                    imported++;
+                } catch (error) {
+                    console.error('Error importing:', row.name, error);
+                    errors++;
+                }
+            }
+        }
+        
+        alert(`✅ Imported ${imported} courses!${errors > 0 ? ` (${errors} failed)` : ''}`);
+        await loadDepartments();
+        await loadDashboard();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+        event.target.value = '';
+    }
+}
+
+async function importUsers(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    loading(true);
+    try {
+        const data = await readExcelFile(file);
+        if (!data || data.length === 0) {
+            alert('No data found in file');
+            loading(false);
+            return;
+        }
+        
+        console.log('User data:', data);
+        
+        let imported = 0, errors = 0;
+        for (const row of data) {
+            const name = row.name || row.Name || row.NAME;
+            const username = row.username || row.Username || row.USERNAME;
+            const password = row.password || row.Password || row.PASSWORD;
+            const role = row.role || row.Role || row.ROLE;
+            
+            if (name && username && password && role) {
+                try {
+                    await api('/admin/users', 'POST', {
+                        name: name,
+                        username: username,
+                        password: password,
+                        role: role,
+                        department_id: row.department_id || row.Department_id || null,
+                        roll_number: row.roll_number || row.Roll_number || null,
+                        semester: row.semester || row.Semester || null,
+                        year: row.year || row.Year || null,
+                        subject_ids: []
+                    });
+                    imported++;
+                } catch (error) {
+                    console.error('Error importing user:', name, error);
+                    errors++;
+                }
+            } else {
+                console.warn('Skipping row - missing required fields:', row);
+                errors++;
+            }
+        }
+        
+        alert(`✅ Imported ${imported} users!${errors > 0 ? ` (${errors} failed - check console for details)` : ''}`);
+        await loadUsers();
+        await loadDashboard();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+        console.error('Import error:', error);
+    } finally {
+        loading(false);
+        event.target.value = '';
+    }
+}
+
+async function importSubjects(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    loading(true);
+    try {
+        const data = await readExcelFile(file);
+        if (!data || data.length === 0) {
+            alert('No data found in file');
+            loading(false);
+            return;
+        }
+        
+        console.log('Subject data:', data);
+        
+        let imported = 0, errors = 0;
+        for (const row of data) {
+            const name = row.name || row.Name || row.NAME;
+            const code = row.code || row.Code || row.CODE;
+            const department_id = row.department_id || row.Department_id || row.DEPARTMENT_ID;
+            
+            if (name && code && department_id) {
+                try {
+                    await api('/admin/subjects', 'POST', {
+                        name: name,
+                        code: code,
+                        department_id: parseInt(department_id),
+                        semester: row.semester || row.Semester || null,
+                        teacher_ids: []
+                    });
+                    imported++;
+                } catch (error) {
+                    console.error('Error importing subject:', name, error);
+                    errors++;
+                }
+            } else {
+                console.warn('Skipping row - missing required fields:', row);
+                errors++;
+            }
+        }
+        
+        alert(`✅ Imported ${imported} subjects!${errors > 0 ? ` (${errors} failed - check console)` : ''}`);
+        await loadSubjects();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+        console.error('Import error:', error);
+    } finally {
+        loading(false);
+        event.target.value = '';
+    }
+}
+
+async function importClasses(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    loading(true);
+    try {
+        const data = await readExcelFile(file);
+        if (!data || data.length === 0) {
+            alert('No data found in file');
+            loading(false);
+            return;
+        }
+        
+        console.log('Classes data:', data);
+        
+        let imported = 0, errors = 0;
+        for (const row of data) {
+            const name = row.name || row.Name || row.NAME;
+            const code = row.code || row.Code || row.CODE;
+            const latitude = row.latitude || row.Latitude || row.LATITUDE;
+            const longitude = row.longitude || row.Longitude || row.LONGITUDE;
+            
+            if (name && code && latitude && longitude) {
+                try {
+                    await api('/admin/classes', 'POST', {
+                        name: name,
+                        code: code,
+                        building: row.building || row.Building || '',
+                        room_number: row.room_number || row.Room_number || row.room || '',
+                        latitude: parseFloat(latitude),
+                        longitude: parseFloat(longitude),
+                        geo_radius: parseInt(row.geo_radius || row.Geo_radius || 100)
+                    });
+                    imported++;
+                } catch (error) {
+                    console.error('Error importing class:', name, error);
+                    errors++;
+                }
+            } else {
+                console.warn('Skipping row - missing required fields:', row);
+                errors++;
+            }
+        }
+        
+        alert(`✅ Imported ${imported} classes!${errors > 0 ? ` (${errors} failed - check console)` : ''}`);
+        await loadClasses();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+        console.error('Import error:', error);
+    } finally {
+        loading(false);
+        event.target.value = '';
+    }
+}
+
+// ================== EXPORT REPORT ==================
+async function generateReport() {
+    const deptId = document.getElementById('report-dept').value;
+    const semester = document.getElementById('report-sem').value;
+    
+    if (!deptId) {
+        alert('Please select a course');
+        return;
+    }
+    
+    loading(true);
+    try {
+        let endpoint = `/admin/reports/department/${deptId}`;
+        if (semester) endpoint += `?semester=${semester}`;
+        
+        const report = await api(endpoint);
+        
+        if (!report || report.length === 0) {
+            alert('No attendance data found');
+            loading(false);
+            return;
+        }
+        
+        // Convert to Excel
+        const ws = XLSX.utils.json_to_sheet(report);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Attendance Report");
+        
+        const deptName = document.getElementById('report-dept').selectedOptions[0].text.replace(/[^a-zA-Z0-9]/g, '_');
+        const semText = semester ? `_Sem${semester}` : '_AllSems';
+        const filename = `Attendance_${deptName}${semText}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        
+        XLSX.writeFile(wb, filename);
+        alert('✅ Report exported successfully!');
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+// READ EXCEL FILE
+function readExcelFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                resolve(jsonData);
+            } catch (error) {
+                reject(error);
+            }
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsArrayBuffer(file);
+    });
+}
+</script>
+</body>
+</html>

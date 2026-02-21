@@ -1,0 +1,2959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GeoAttend - Teacher & Student Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f5f5f5; }
+        
+        #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 9999; }
+        #loading.show { display: flex; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .login-screen { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; }
+        .login-box { background: white; padding: 40px; border-radius: 15px; width: 100%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .login-box h2 { text-align: center; margin-bottom: 10px; color: #667eea; }
+        .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 30px; }
+        
+        .tabs { display: flex; background: #e0e0e0; border-radius: 8px; margin-bottom: 20px; }
+        .tabs button { flex: 1; padding: 12px; border: none; background: none; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .tabs button.active { background: #667eea; color: white; border-radius: 8px; }
+        
+        .login-form { display: none; }
+        .login-form.active { display: block; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #333; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .form-group input:focus { outline: none; border-color: #667eea; }
+        
+        .login-btn { width: 100%; padding: 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; }
+        .login-btn:hover { background: #5568d3; }
+        
+        .dashboard { display: none; }
+        .dashboard.active { display: block; }
+        
+        header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { font-size: 24px; }
+        .user-info { font-size: 14px; opacity: 0.9; margin-top: 5px; }
+        header button { background: white; color: #667eea; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        
+        .content { padding: 25px; max-width: 1400px; margin: 0 auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 25px; }
+        .card h2 { margin-bottom: 20px; }
+        
+        .btn { background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 5px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
+        .btn:hover { background: #5568d3; }
+        .btn-success { background: #4caf50; }
+        .btn-danger { background: #f44336; }
+        .btn-secondary { background: #6c757d; }
+        
+        .step-indicator { display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; }
+        .step { flex: 1; text-align: center; padding: 15px 10px; background: #f0f0f0; border-radius: 8px; font-weight: 600; color: #999; font-size: 13px; min-width: 100px; }
+        .step.active { background: #667eea; color: white; }
+        .step.completed { background: #4caf50; color: white; }
+        
+        .selection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin: 25px 0; }
+        .selection-card { padding: 25px; border: 3px solid #ddd; border-radius: 12px; text-align: center; cursor: pointer; }
+        .selection-card:hover { border-color: #667eea; background: #f0f4ff; }
+        
+        /* NEW: Subject Card Styling */
+        .subject-selection-card {
+            border: 3px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+        .subject-selection-card:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.2);
+        }
+        .subject-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .subject-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+        .subject-code {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .subject-card-details {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .subject-badge {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .badge-program {
+            background: #28a745;
+            color: white;
+        }
+        .badge-semester {
+            background: #17a2b8;
+            color: white;
+        }
+        .badge-dept {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .mode-card { padding: 40px; border: 3px solid #ddd; border-radius: 12px; text-align: center; cursor: pointer; }
+        .mode-card:hover { border-color: #667eea; }
+        .mode-card i { font-size: 48px; margin-bottom: 15px; }
+        
+        .live-session { background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .live-badge { background: #ff4444; padding: 5px 15px; border-radius: 20px; font-size: 12px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        
+        .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat-box { background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-box .number { font-size: 32px; font-weight: bold; }
+        
+        .student-item { background: #f8f9fa; padding: 18px; margin: 12px 0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #667eea; }
+        .student-item.present { border-left-color: #4caf50; background: #e8f5e9; }
+        .student-item.absent { border-left-color: #f44336; background: #ffebee; }
+        .student-name { font-weight: bold; font-size: 16px; }
+        .student-roll { font-size: 13px; color: #667eea; font-weight: 600; }
+        .student-status { display: flex; gap: 10px; }
+        .status-badge { padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 13px; }
+        .status-badge.present { background: #4caf50; color: white; }
+        .status-badge.absent { background: #f44336; color: white; }
+        .status-badge.unmarked { background: #9e9e9e; color: white; }
+        
+        .subject-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; margin: 15px 0; }
+        .subject-card .percentage { font-size: 42px; font-weight: bold; }
+        
+        .search-box { width: 100%; padding: 14px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 18px; }
+        .alert { padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .alert-info { background: #e3f2fd; color: #1976d2; border-left: 4px solid #1976d2; }
+        .alert-warning { background: #fff3e0; color: #f57c00; border-left: 4px solid #f57c00; }
+        .alert-danger { background: #ffebee; color: #c62828; border-left: 4px solid #c62828; }
+        
+        .auto-checkin-status { background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+        .auto-checkin-status.inactive { background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%); }
+        .auto-checkin-status .status-icon { font-size: 48px; margin-bottom: 10px; }
+        .roll-number-badge { background: #667eea; color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: 600; margin-left: 8px; }
+/* Session details styling */
+.session-detail-card {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 15px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.session-item {
+    margin: 8px 0;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    border-left: 4px solid #fff;
+}
+
+.session-item.present {
+    border-left-color: #4caf50;
+}
+
+.session-item.absent {
+    border-left-color: #f44336;
+}
+
+.session-item strong {
+    font-size: 15px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.session-item small {
+    display: block;
+    margin: 3px 0;
+    opacity: 0.95;
+}
+
+.status-badge {
+    padding: 10px 18px;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.status-badge.present {
+    background: #4caf50;
+    color: white;
+}
+
+.status-badge.absent {
+    background: #f44336;
+    color: white;
+}
+
+.status-badge.unmarked {
+    background: #9e9e9e;
+    color: white;
+}
+/* Enhanced History Table Styles */
+.history-table-wrapper {
+    overflow-x: auto;
+    margin-top: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 800px;
+    background: white;
+}
+
+.history-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.history-table thead th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    white-space: nowrap;
+}
+
+.history-table thead th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.history-table thead th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.history-table tbody tr {
+    transition: all 0.2s;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.history-table tbody tr:hover {
+    background: #f8f9ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(102,126,234,0.1);
+}
+
+.history-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.history-table tbody td {
+    padding: 14px 12px;
+    font-size: 14px;
+    color: #333;
+    vertical-align: middle;
+}
+
+.history-date-cell {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.history-subject-cell strong {
+    display: block;
+    color: #333;
+    margin-bottom: 4px;
+    font-size: 15px;
+}
+
+.history-subject-cell small {
+    color: #667eea;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.history-time-cell {
+    color: #666;
+    font-weight: 500;
+}
+
+.history-stats-bar {
+    margin-top: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.history-stats-bar .stats-left {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.history-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.history-stat-item i {
+    font-size: 18px;
+}
+
+.history-stat-item.total {
+    color: #667eea;
+}
+
+.history-stat-item.present {
+    color: #4caf50;
+}
+
+.history-stat-item.absent {
+    color: #f44336;
+}
+
+.history-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.filter-date-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 2px solid #e0e0e0;
+}
+
+.filter-date-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+    color: #667eea;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .history-table thead th,
+    .history-table tbody td {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+    
+    .history-stats-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .history-stats-bar .stats-left {
+        justify-content: space-around;
+    }
+    
+    .history-stat-value {
+        font-size: 18px;
+    }
+}
+/* Teacher History Tab Styles */
+.teacher-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.teacher-tabs button {
+    padding: 12px 24px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: 600;
+    color: #666;
+    border-bottom: 3px solid transparent;
+}
+
+.teacher-tabs button.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+}
+
+/* Filter Section */
+.filter-box-teacher {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 2px solid #e0e0e0;
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.filter-row label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.filter-row select,
+.filter-row input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.filter-row select:focus,
+.filter-row input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* History Table */
+.history-table-teacher {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.history-table-teacher thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.history-table-teacher thead th {
+    padding: 14px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.history-table-teacher tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: all 0.2s;
+}
+
+.history-table-teacher tbody tr:hover {
+    background: #f8f9ff;
+}
+
+.history-table-teacher tbody td {
+    padding: 12px 10px;
+    font-size: 13px;
+}
+
+/* Status Badge - Clickable */
+.status-badge-edit {
+    padding: 6px 14px;
+    border-radius: 15px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-block;
+    transition: all 0.3s;
+}
+
+.status-badge-edit.present {
+    background: #4caf50;
+    color: white;
+}
+
+.status-badge-edit.absent {
+    background: #f44336;
+    color: white;
+}
+
+.status-badge-edit:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+/* Summary Stats */
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-box-teacher {
+    background: white;
+    padding: 18px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    text-align: center;
+}
+
+.stat-box-teacher .number {
+    font-size: 28px;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.stat-box-teacher .label {
+    font-size: 13px;
+    color: #666;
+    margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+    .filter-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .history-table-teacher {
+        font-size: 12px;
+    }
+    
+    .history-table-teacher thead th,
+    .history-table-teacher tbody td {
+        padding: 8px 6px;
+    }
+}
+/* Session Card Styles */
+.session-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-left: 5px solid #667eea;
+    transition: all 0.3s;
+}
+
+.session-card:hover {
+    box-shadow: 0 4px 20px rgba(102,126,234,0.2);
+}
+
+.session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+    gap: 20px;
+}
+
+.session-info {
+    flex: 1;
+    min-width: 0; /* Prevents overflow */
+}
+
+.session-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.session-meta {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: #666;
+}
+
+.session-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.session-meta-item i {
+    color: #667eea;
+}
+
+.session-stats {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.session-stat {
+    text-align: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    min-width: 70px;
+}
+
+.session-stat .number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #667eea;
+    line-height: 1;
+}
+
+.session-stat .label {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.session-stat.present .number {
+    color: #4caf50;
+}
+
+.session-stat.absent .number {
+    color: #f44336;
+}
+
+.session-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Student List Inside Session */
+.session-students {
+    display: none;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.session-students.expanded {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 2000px;
+    }
+}
+
+.session-students > div:first-child {
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #667eea;
+    font-size: 15px;
+}
+
+/* ========== MOBILE RESPONSIVE: PHONES (0-480px) ========== */
+@media (max-width: 480px) {
+    .session-card {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .session-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .session-title {
+        font-size: 16px;
+    }
+    
+    .session-title span {
+        font-size: 11px !important;
+        padding: 3px 10px !important;
+    }
+    
+    .session-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .session-meta-item {
+        font-size: 12px;
+    }
+    
+    .session-stats {
+        width: 100%;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    
+    .session-stat {
+        flex: 1;
+        padding: 8px 6px;
+        min-width: 60px;
+    }
+    
+    .session-stat .number {
+        font-size: 20px;
+    }
+    
+    .session-stat .label {
+        font-size: 10px;
+    }
+    
+    .session-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+    
+    .session-actions button {
+        width: 100%;
+        padding: 12px;
+        font-size: 13px;
+    }
+}
+
+/* ========== MOBILE RESPONSIVE: TABLETS (481px-768px) ========== */
+@media (min-width: 481px) and (max-width: 768px) {
+    .session-header {
+        flex-wrap: wrap;
+    }
+    
+    .session-stats {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .session-actions {
+        width: 100%;
+    }
+    
+    .session-actions button {
+        flex: 1;
+    }
+}
+
+/* ========== LANDSCAPE MODE ========== */
+@media (max-width: 768px) and (orientation: landscape) {
+    .session-card {
+        padding: 12px;
+    }
+    
+    .session-header {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .session-stats {
+        flex-direction: row;
+    }
+}
+/* Student List Inside Session */
+.session-students {
+    display: none;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.session-students.expanded {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 2000px;
+    }
+}
+
+.session-students > div:first-child {
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #667eea;
+    font-size: 15px;
+}
+
+/* ========== MOBILE RESPONSIVE: PHONES (0-480px) ========== */
+@media (max-width: 480px) {
+    .session-card {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .session-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .session-title {
+        font-size: 16px;
+    }
+    
+    .session-title span {
+        font-size: 11px !important;
+        padding: 3px 10px !important;
+    }
+    
+    .session-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .session-meta-item {
+        font-size: 12px;
+    }
+    
+    .session-stats {
+        width: 100%;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    
+    .session-stat {
+        flex: 1;
+        padding: 8px 6px;
+        min-width: 60px;
+    }
+    
+    .session-stat .number {
+        font-size: 20px;
+    }
+    
+    .session-stat .label {
+        font-size: 10px;
+    }
+    
+    .session-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+    
+    .session-actions button {
+        width: 100%;
+        padding: 12px;
+        font-size: 13px;
+    }
+}
+
+/* ========== MOBILE RESPONSIVE: TABLETS (481px-768px) ========== */
+@media (min-width: 481px) and (max-width: 768px) {
+    .session-header {
+        flex-wrap: wrap;
+    }
+    
+    .session-stats {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .session-actions {
+        width: 100%;
+    }
+    
+    .session-actions button {
+        flex: 1;
+    }
+}
+
+/* ========== LANDSCAPE MODE ========== */
+@media (max-width: 768px) and (orientation: landscape) {
+    .session-card {
+        padding: 12px;
+    }
+    
+    .session-header {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .session-stats {
+        flex-direction: row;
+    }
+}
+/* Session Student List */
+.student-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+    margin: 10px 0;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.student-row:hover {
+    background: #e9ecef;
+    border-left-color: #667eea;
+}
+
+.student-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.student-name-row {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.student-roll-row {
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Status Toggle Buttons */
+.status-toggle {
+    display: flex;
+    gap: 6px;
+}
+
+.status-toggle button {
+    padding: 8px 16px;
+    border: 2px solid;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 90px;
+}
+
+.status-toggle button:active {
+    transform: scale(0.95);
+}
+
+.status-toggle .btn-present {
+    border-color: #4caf50;
+    background: white;
+    color: #4caf50;
+}
+
+.status-toggle .btn-present.active {
+    background: #4caf50;
+    color: white;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.status-toggle .btn-absent {
+    border-color: #f44336;
+    background: white;
+    color: #f44336;
+}
+
+.status-toggle .btn-absent.active {
+    background: #f44336;
+    color: white;
+    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+}
+
+/* Save Button Container */
+.session-students > div:last-child {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px dashed #e0e0e0;
+    text-align: right;
+}
+
+/* ========== MOBILE: PHONES (0-480px) ========== */
+@media (max-width: 480px) {
+    .student-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 12px;
+    }
+    
+    .student-info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .student-name-row {
+        font-size: 14px;
+        word-break: break-word;
+    }
+    
+    .student-roll-row {
+        font-size: 11px;
+        padding: 3px 10px;
+    }
+    
+    .status-toggle {
+        width: 100%;
+        gap: 8px;
+    }
+    
+    .status-toggle button {
+        flex: 1;
+        padding: 12px 10px;
+        font-size: 12px;
+        min-width: 0;
+    }
+    
+    /* Larger touch targets for mobile */
+    .status-toggle button {
+        min-height: 44px;
+    }
+    
+    /* Save button full width on mobile */
+    .session-students > div:last-child {
+        text-align: center;
+    }
+    
+    .session-students > div:last-child button {
+        width: 100%;
+        padding: 14px;
+        font-size: 14px;
+    }
+}
+
+/* ========== TABLET: (481px-768px) ========== */
+@media (min-width: 481px) and (max-width: 768px) {
+    .student-row {
+        flex-wrap: wrap;
+    }
+    
+    .student-info-row {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .status-toggle {
+        min-width: 200px;
+    }
+}
+
+/* ========== VERY SMALL SCREENS (max 360px) ========== */
+@media (max-width: 360px) {
+    .student-name-row {
+        font-size: 13px;
+    }
+    
+    .student-roll-row {
+        font-size: 10px;
+        padding: 2px 8px;
+    }
+    
+    .status-toggle button {
+        font-size: 11px;
+        padding: 10px 8px;
+    }
+}
+
+/* ========== LANDSCAPE MODE ========== */
+@media (max-width: 768px) and (orientation: landscape) {
+    .student-row {
+        flex-direction: row;
+    }
+    
+    .student-info-row {
+        flex-direction: row;
+    }
+    
+    .status-toggle {
+        width: auto;
+    }
+}
+
+/* ========== TOUCH IMPROVEMENTS ========== */
+@media (hover: none) and (pointer: coarse) {
+    /* Larger touch targets */
+    .student-row {
+        padding: 16px;
+        margin: 12px 0;
+    }
+    
+    .status-toggle button {
+        min-height: 48px;
+        min-width: 48px;
+    }
+    
+    /* Prevent accidental zooms */
+    .status-toggle button {
+        font-size: 16px;
+    }
+}
+/* Empty State */
+.empty-sessions {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+}
+
+.empty-sessions i {
+    font-size: 64px;
+    opacity: 0.3;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 768px) {
+    .session-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .session-stats {
+        width: 100%;
+        justify-content: space-around;
+    }
+    
+    .session-actions {
+        width: 100%;
+    }
+    
+    .session-actions button {
+        flex: 1;
+    }
+    
+    .student-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .status-toggle {
+        width: 100%;
+    }
+    
+    .status-toggle button {
+        flex: 1;
+    }
+}
+
+
+@media (max-width: 1024px) {
+    .selection-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .stats-bar { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+}
+
+@media (max-width: 768px) {
+    header { flex-wrap: wrap; padding: 12px 15px; gap: 10px; }
+    header h1 { font-size: 18px; }
+    header button { width: auto; }
+    
+    .content { padding: 12px; }
+    .card { padding: 20px 15px; }
+    .login-box { padding: 30px 20px; }
+    
+    .selection-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .selection-card { padding: 20px 15px; min-height: 100px; }
+    
+    .subject-card-header { flex-wrap: wrap; gap: 8px; }
+    .subject-name { font-size: 16px; }
+    .subject-code { font-size: 11px; }
+    .subject-badge { font-size: 12px; padding: 5px 10px; }
+    
+    .step-indicator { gap: 5px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .step { min-width: 80px; padding: 12px 8px; font-size: 12px; }
+    
+    .student-item { flex-direction: column; align-items: flex-start; gap: 10px; padding: 15px 12px; }
+    .student-status { width: 100%; flex-wrap: wrap; }
+    .student-status button { flex: 1; min-width: 100px; margin: 3px; }
+    
+    .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat-box { padding: 12px; }
+    .stat-box .number { font-size: 28px; }
+    
+    .btn { padding: 10px 18px; font-size: 13px; }
+    
+    .teacher-tabs { gap: 5px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .teacher-tabs button { padding: 10px 16px; font-size: 13px; min-width: 120px; }
+    
+    .filter-row { grid-template-columns: 1fr; gap: 12px; }
+    
+    .history-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .history-table thead th, .history-table tbody td { padding: 10px 8px; font-size: 13px; }
+    
+    .summary-stats { grid-template-columns: repeat(2, 1fr); }
+    
+    .session-card { padding: 15px; }
+    .session-header { flex-direction: column; gap: 15px; }
+    .session-stats { width: 100%; justify-content: space-around; }
+    .session-actions { flex-direction: column; width: 100%; }
+    .session-actions button { width: 100%; margin: 5px 0; }
+    
+    .student-row { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; }
+    .student-info-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .status-toggle { width: 100%; gap: 8px; }
+    .status-toggle button { flex: 1; padding: 12px 10px; min-height: 44px; }
+}
+
+@media (max-width: 480px) {
+    header h1 { font-size: 16px; }
+    header button { width: 100%; }
+    
+    .selection-grid { grid-template-columns: 1fr; }
+    .selection-card { padding: 18px 15px; }
+    
+    .step { min-width: 70px; padding: 10px 6px; font-size: 11px; }
+    
+    .stats-bar { grid-template-columns: 1fr; }
+    
+    .btn { width: 100%; justify-content: center; margin: 5px 0; }
+    
+    .subject-card-header { flex-direction: column; align-items: flex-start; }
+    
+    .summary-stats { grid-template-columns: 1fr; }
+    
+    .session-stat { min-width: 60px; padding: 8px 6px; }
+    .session-stat .number { font-size: 20px; }
+    
+    .filter-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+    .login-box { max-height: 90vh; overflow-y: auto; }
+    header { flex-direction: row; }
+    .selection-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    button, .btn, input, select, textarea { min-height: 44px; font-size: 16px; }
+    .status-toggle button { min-height: 48px; }
+}
+    </style>
+</head>
+<body>
+<div id="loading"><div class="spinner"></div></div>
+
+<div id="login-screen" class="login-screen">
+    <div class="login-box">
+        <h2><i class="fas fa-globe"></i> GeoAttend</h2>
+        <p class="subtitle">Teacher & Student Portal</p>
+        <div class="tabs">
+            <button class="active" onclick="switchTab('teacher')"><i class="fas fa-chalkboard-teacher"></i> Teacher</button>
+            <button onclick="switchTab('student')"><i class="fas fa-user-graduate"></i> Student</button>
+        </div>
+        <div id="teacher-form" class="login-form active">
+            <div class="form-group"><label><i class="fas fa-user"></i> Username</label><input type="text" id="teacher-user" value="teacher"></div>
+            <div class="form-group"><label><i class="fas fa-lock"></i> Password</label><input type="password" id="teacher-pass" value="pass"></div>
+            <button class="login-btn" onclick="login('teacher')"><i class="fas fa-sign-in-alt"></i> Sign In as Teacher</button>
+        </div>
+        <div id="student-form" class="login-form">
+            <div class="form-group"><label><i class="fas fa-user"></i> Username</label><input type="text" id="student-user" value="student"></div>
+            <div class="form-group"><label><i class="fas fa-lock"></i> Password</label><input type="password" id="student-pass" value="pass"></div>
+            <button class="login-btn" onclick="login('student')"><i class="fas fa-sign-in-alt"></i> Sign In as Student</button>
+        </div>
+    </div>
+</div>
+<div id="student-dashboard" class="dashboard"></div>
+
+<div id="teacher-dashboard" class="dashboard">
+    <header>
+        <div>
+            <h1><i class="fas fa-chalkboard-teacher"></i> Teacher Dashboard</h1>
+            <div class="user-info">Welcome, <span id="teacher-name"></span></div>
+        </div>
+        <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </header>
+    
+    <div class="content">
+        <!-- Teacher Tabs -->
+        <div class="teacher-tabs">
+            <button class="active" onclick="switchTeacherTab('take')">
+                <i class="fas fa-clipboard-check"></i> Take Attendance
+            </button>
+            <button onclick="switchTeacherTab('history')">
+                <i class="fas fa-history"></i> View & Edit History
+            </button>
+        </div>
+        
+        <!-- TAB 1: Take Attendance (Keep existing) -->
+        <div id="tab-take-attendance" class="teacher-tab-content">
+            <div class="card">
+                <h2><i class="fas fa-clipboard-check"></i> Take Attendance</h2>
+                
+                <div class="step-indicator">
+                    <div class="step active" id="step1">1. Subject</div>
+                    <div class="step" id="step2">2. Class</div>
+                    <div class="step" id="step3">3. Mode</div>
+                </div>
+                
+                <div id="teacher-content">
+                    <!-- Content loads here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- TAB 2: History & Edit (NEW) -->
+       <div id="tab-history-edit" class="teacher-tab-content" style="display: none;">
+    <div class="card">
+        <h2><i class="fas fa-history"></i> Attendance History & Edit</h2>
+        
+        <!-- Filter Section (keep existing) -->
+        <div class="filter-box-teacher">
+            <h3 style="margin-bottom: 15px; color: #667eea;">
+                <i class="fas fa-filter"></i> Filter Records
+            </h3>
+            
+            <div class="filter-row">
+                <div>
+                    <label><i class="fas fa-book"></i> Subject</label>
+                    <select id="filter-subject">
+                        <option value="">All Subjects</option>
+                    </select>
+                </div>
+                <div>
+                    <label><i class="fas fa-calendar-alt"></i> Start Date</label>
+                    <input type="date" id="filter-start-date">
+                </div>
+                <div>
+                    <label><i class="fas fa-calendar-check"></i> End Date</label>
+                    <input type="date" id="filter-end-date">
+                </div>
+                <div>
+                    <label><i class="fas fa-user-graduate"></i> Student Name</label>
+                    <input type="text" id="filter-student-name" placeholder="Search by name...">
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn" onclick="loadHistory()">
+                    <i class="fas fa-search"></i> Load History
+                </button>
+                <button class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="fas fa-redo"></i> Clear
+                </button>
+                <button class="btn btn-success" onclick="exportHistory()" style="margin-left: auto;">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </button>
+            </div>
+        </div>
+        
+        <!-- View Toggle: Session View vs Table View -->
+        <div class="view-toggle" id="view-toggle" style="display: none;">
+            <button class="active" onclick="switchView('session')">
+                <i class="fas fa-th-large"></i> Session View
+            </button>
+            <button onclick="switchView('table')">
+                <i class="fas fa-table"></i> Table View
+            </button>
+        </div>
+        
+        <!-- Summary Stats (keep existing) -->
+        <div class="summary-stats" id="summary-stats" style="display: none;">
+            <div class="stat-box-teacher">
+                <div class="number" id="total-records">0</div>
+                <div class="label">Total Records</div>
+            </div>
+            <div class="stat-box-teacher">
+                <div class="number" id="present-count" style="color: #4caf50;">0</div>
+                <div class="label">Present</div>
+            </div>
+            <div class="stat-box-teacher">
+                <div class="number" id="absent-count" style="color: #f44336;">0</div>
+                <div class="label">Absent</div>
+            </div>
+            <div class="stat-box-teacher">
+                <div class="number" id="attendance-percent">0%</div>
+                <div class="label">Attendance %</div>
+            </div>
+        </div>
+        
+        <!-- Session View Container (NEW) -->
+        <div id="session-view-container" style="display: none;">
+            <!-- Sessions will be loaded here -->
+        </div>
+        
+        <!-- Table View Container (Existing) -->
+        <div id="history-container">
+            <div style="text-align: center; padding: 60px 20px; color: #999;">
+                <i class="fas fa-clipboard-list" style="font-size: 60px; opacity: 0.3; margin-bottom: 15px;"></i>
+                <h3>No Records Loaded</h3>
+                <p>Select filters and click "Load History"</p>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+const API = 'http://localhost:3000/api';
+let token, currentUser, currentRole;
+let selectedSubject, selectedDepartment, selectedSemester, selectedClass, selectedMode;
+let currentSessionId = null, sessionInterval = null, autoCheckInterval = null, watchId = null;
+
+function switchTab(role) {
+    document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById(role + '-form').classList.add('active');
+    event.target.classList.add('active');
+}
+
+function loading(show) { 
+    document.getElementById('loading').classList.toggle('show', show); 
+}
+
+async function api(endpoint, method, data) {
+    const options = { method: method || 'GET', headers: { 'Content-Type': 'application/json' } };
+    if (token) options.headers['Authorization'] = 'Bearer ' + token;
+    if (data) options.body = JSON.stringify(data);
+    const response = await fetch(API + endpoint, options);
+    if (!response.ok) throw new Error(await response.text() || 'Failed');
+    return await response.json();
+}
+
+async function login(role) {
+    loading(true);
+    try {
+        const result = await api('/auth/login', 'POST', {
+            username: document.getElementById(role + '-user').value,
+            password: document.getElementById(role + '-pass').value,
+            role: role
+        });
+        if (result.success) {
+            token = result.token;
+            currentUser = result.user;
+            currentRole = role;
+            document.getElementById('login-screen').style.display = 'none';
+            if (role === 'student') { 
+                await loadStudent(); 
+                startAutoCheckIn(); 
+            }
+            else if (role === 'teacher') {
+                await loadTeacher();
+            }
+        }
+    } catch (error) {
+        alert('❌ Login failed: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+function logout() {
+    if (sessionInterval) clearInterval(sessionInterval);
+    if (autoCheckInterval) clearInterval(autoCheckInterval);
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    token = currentUser = currentRole = currentSessionId = null;
+    document.querySelectorAll('.dashboard').forEach(d => { d.classList.remove('active'); d.innerHTML = ''; });
+    document.getElementById('login-screen').style.display = 'flex';
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3, φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180, Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function filterStudents(query) {
+    const search = query.toLowerCase();
+    document.querySelectorAll('.student-item').forEach(item => {
+        const name = item.getAttribute('data-name'), roll = item.getAttribute('data-roll');
+        item.style.display = (name.includes(search) || roll.includes(search)) ? 'flex' : 'none';
+    });
+}
+// ================== STUDENT FUNCTIONS ==================
+async function loadStudent() {
+    const dash = document.getElementById('student-dashboard');
+    dash.classList.add('active');
+    const rollBadge = currentUser.roll_number ? ` <span class="roll-number-badge">${currentUser.roll_number}</span>` : '';
+    dash.innerHTML = `<header><div><h1><i class="fas fa-user-graduate"></i> Student Dashboard</h1><div class="user-info">Welcome, ${currentUser.name}${rollBadge}</div></div><button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button></header><div class="content"><div id="auto-checkin-card" class="auto-checkin-status inactive"><div class="status-icon">📍</div><h3>Auto Check-in: Monitoring...</h3><p>Waiting for active sessions</p></div><div class="card"><h2>Overall Attendance</h2><div style="text-align:center;padding:20px;"><div style="font-size:52px;font-weight:bold;color:#667eea;" id="percent">0%</div><p style="font-size:18px;"><span id="attended">0</span> / <span id="total">0</span> classes</p></div></div><div class="card"><h2><i class="fas fa-chart-bar"></i> Subject-wise</h2><div id="subjects"></div></div></div>`;
+    try {
+        const data = await api('/student/dashboard');
+        const percent = data.overview.total ? Math.round(data.overview.attended / data.overview.total * 100) : 0;
+        document.getElementById('percent').textContent = percent + '%';
+        document.getElementById('attended').textContent = data.overview.attended;
+        document.getElementById('total').textContent = data.overview.total;
+        const subData = await api('/student/attendance/subject-wise');
+        document.getElementById('subjects').innerHTML = subData.length ? subData.map(s => `<div class="subject-card"><h3>${s.subject_name}</h3><div class="percentage">${s.percentage||0}%</div><p>${s.present_count||0} / ${s.total_classes||0}</p></div>`).join('') : '<div class="alert alert-info">No records</div>';
+        
+        // ADD THIS LINE HERE:
+        await addStudentHistorySection();
+        
+    } catch (error) { 
+        console.error(error); 
+    }
+}
+
+function startAutoCheckIn() {
+    if (navigator.geolocation) {
+        watchId = navigator.geolocation.watchPosition(async (pos) => await checkAndMarkAttendance(pos.coords.latitude, pos.coords.longitude), (error) => updateCheckInStatus('❌ GPS Error', 'Enable GPS', 'inactive'), { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 });
+        autoCheckInterval = setInterval(async () => { 
+            navigator.geolocation.getCurrentPosition(async (pos) => await checkAndMarkAttendance(pos.coords.latitude, pos.coords.longitude), null, { enableHighAccuracy: true }); 
+        }, 30000);
+    } else updateCheckInStatus('❌ No GPS', 'Not supported', 'inactive');
+}
+
+async function checkAndMarkAttendance(latitude, longitude) {
+    try {
+        const { sessions } = await api('/student/active-sessions');
+        
+        if (!sessions.length) { 
+            updateCheckInStatus('⏳ Monitoring', 'No active sessions nearby', 'inactive'); 
+            return; 
+        }
+        
+        // Separate marked and unmarked sessions
+        const markedSessions = sessions.filter(s => s.status !== 'unmarked');
+        const unmarkedSessions = sessions.filter(s => s.status === 'unmarked');
+        
+        // If student has ANY marked sessions, show them prominently
+        if (markedSessions.length > 0) {
+            showMarkedSessionsAlert(markedSessions);
+            
+            // If there are also unmarked sessions, try to check-in
+            if (unmarkedSessions.length > 0) {
+                try {
+                    const result = await api('/student/geo-checkin', 'POST', { latitude, longitude });
+                    
+                    if (result.checkedIn?.length > 0) {
+                        // Refresh to show newly checked-in sessions
+                        setTimeout(async () => {
+                            await loadStudent();
+                        }, 1000);
+                        playSuccessSound();
+                        showCheckInSuccessDetails(result.checkedIn);
+                    }
+                } catch (error) {
+                    console.error('Check-in error:', error);
+                }
+            }
+            return; // Exit here to keep the marked sessions displayed
+        }
+        
+        // If no marked sessions yet, try to check-in
+        if (unmarkedSessions.length > 0) {
+            const result = await api('/student/geo-checkin', 'POST', { latitude, longitude });
+            
+            if (result.checkedIn?.length > 0) {
+                updateCheckInStatus('✅ Checked In!', `Marked in ${result.checkedIn.length} class(es)`, 'active');
+                await loadStudent();
+                playSuccessSound();
+                showCheckInSuccessDetails(result.checkedIn);
+            } else {
+                // Show nearby active sessions
+                showNearbySessionsInfo(unmarkedSessions, latitude, longitude);
+            }
+        }
+        
+    } catch (error) { 
+        console.error('Check attendance error:', error); 
+        updateCheckInStatus('❌ Error', error.message, 'inactive');
+    }
+}
+function showMarkedSessionsAlert(markedSessions) {
+    const card = document.getElementById('auto-checkin-card');
+    if (!card || markedSessions.length === 0) return;
+    
+    // Get the latest marked session (most recent markedAt time)
+    const latestSession = markedSessions.reduce((latest, current) => {
+        if (!latest.markedAt) return current;
+        if (!current.markedAt) return latest;
+        return new Date(current.markedAt) > new Date(latest.markedAt) ? current : latest;
+    });
+    
+    const isPresent = latestSession.status === 'present';
+    const statusColor = isPresent ? '#4caf50' : '#f44336';
+    const statusIcon = isPresent ? '✅' : '❌';
+    const statusText = isPresent ? 'PRESENT' : 'ABSENT';
+    
+    // Determine marking method
+    let markedByText = '';
+    let markedByIcon = '';
+    if (latestSession.markedBy === 'manual') {
+        markedByText = 'Marked by Teacher';
+        markedByIcon = '👨‍🏫';
+    } else if (latestSession.markedBy === 'geo-auto') {
+        markedByText = 'Auto Check-in (GPS)';
+        markedByIcon = '📍';
+    } else if (latestSession.markedBy === 'auto-absent') {
+        markedByText = 'Auto-marked Absent';
+        markedByIcon = '⏰';
+    } else {
+        markedByText = 'System Marked';
+        markedByIcon = '🤖';
+    }
+    
+    card.className = 'auto-checkin-status active';
+    card.style.background = `linear-gradient(135deg, ${statusColor} 0%, ${statusColor}dd 100%)`;
+    card.innerHTML = `
+        <div class="status-icon" style="font-size: 70px; margin-bottom: 15px;">${statusIcon}</div>
+        
+        <h2 style="font-size: 32px; margin: 15px 0; color: white; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); letter-spacing: 1px;">
+            YOU ARE ${statusText}
+        </h2>
+        
+        <div style="margin-top: 25px; background: rgba(255,255,255,0.3); padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+            <!-- Subject Name -->
+            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.3);">
+                <div style="font-size: 22px; font-weight: bold; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.2);">
+                    📚 ${latestSession.subjectName}
+                </div>
+                ${latestSession.subjectCode ? `
+                    <div style="margin-top: 5px; font-size: 14px; color: white; opacity: 0.9;">
+                        Code: ${latestSession.subjectCode}
+                    </div>
+                ` : ''}
+            </div>
+            
+            <!-- Details Grid -->
+            <div style="color: white; font-size: 15px; line-height: 2.2; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">
+                <div style="margin: 10px 0; display: flex; align-items: center;">
+                    <span style="min-width: 35px; font-size: 20px;">👨‍🏫</span>
+                    <strong style="min-width: 100px;">Teacher:</strong> 
+                    <span style="font-size: 16px;">${latestSession.teacherName}</span>
+                </div>
+                
+                <div style="margin: 10px 0; display: flex; align-items: center;">
+                    <span style="min-width: 35px; font-size: 20px;">${markedByIcon}</span>
+                    <strong style="min-width: 100px;">Method:</strong> 
+                    <span style="font-size: 16px;">${markedByText}</span>
+                </div>
+                
+                ${latestSession.markedAt ? `
+                    <div style="margin: 10px 0; display: flex; align-items: center;">
+                        <span style="min-width: 35px; font-size: 20px;">🕐</span>
+                        <strong style="min-width: 100px;">Time:</strong> 
+                        <span style="font-size: 16px;">${new Date(latestSession.markedAt).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            hour12: true 
+                        })}</span>
+                    </div>
+                ` : ''}
+                
+                ${latestSession.classInfo ? `
+                    <div style="margin: 10px 0; display: flex; align-items: center;">
+                        <span style="min-width: 35px; font-size: 20px;">🏛️</span>
+                        <strong style="min-width: 100px;">Location:</strong> 
+                        <span style="font-size: 16px;">${latestSession.classInfo.name} - ${latestSession.classInfo.building}</span>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+        
+        <!-- Additional Info if multiple sessions -->
+        ${markedSessions.length > 1 ? `
+            <div style="margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.2); border-radius: 8px; font-size: 14px; color: white;">
+                <strong>📊 Today's Total:</strong> ${markedSessions.length} session(s) marked
+            </div>
+        ` : ''}
+        
+        <!-- Footer Message -->
+        <div style="margin-top: 20px; padding: 18px; background: rgba(255,255,255,0.25); border-radius: 10px; font-size: 16px; color: white; font-weight: 600; text-align: center; line-height: 1.6; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            ${isPresent ? 
+                '🎉 Great! Your attendance is recorded as PRESENT.' : 
+                '⚠️ You are marked ABSENT. Contact your teacher if this is incorrect.'}
+        </div>
+    `;
+}
+// NEW: Show successful check-in details
+function showCheckInSuccessDetails(checkedInSessions) {
+    if (checkedInSessions.length === 0) return;
+    
+    const details = checkedInSessions.map(s => 
+        `✅ ${s.subjectName || 'Subject'}\n   Teacher: ${s.teacherName || 'Unknown'}\n   Distance: ${s.distance}m`
+    ).join('\n\n');
+    
+    setTimeout(() => {
+        alert(`🎉 Attendance Marked Successfully!\n\n${details}`);
+    }, 500);
+}
+
+// NEW: Show nearby active sessions info
+function showNearbySessionsInfo(sessions, latitude, longitude) {
+    const sessionInfo = sessions.map(s => {
+        const distance = Math.round(calculateDistance(
+            latitude, longitude, 
+            s.classInfo.latitude, 
+            s.classInfo.longitude
+        ));
+        return {
+            ...s,
+            distance: distance
+        };
+    }).sort((a, b) => a.distance - b.distance);
+    
+    const nearest = sessionInfo[0];
+    
+    updateCheckInStatus(
+        '📍 Nearby Session', 
+        `${nearest.subjectName} - ${nearest.distance}m away`, 
+        'inactive'
+    );
+    
+    // Update card with session details
+    const card = document.getElementById('auto-checkin-card');
+    if (card) {
+        card.innerHTML = `
+            <div class="status-icon">📍</div>
+            <h3>Active Sessions Nearby</h3>
+            <div style="margin-top: 15px; background: rgba(255,255,255,0.2); padding: 12px; border-radius: 8px; max-height: 200px; overflow-y: auto;">
+                ${sessionInfo.map(s => `
+                    <div style="margin: 8px 0; padding: 10px; background: rgba(255,255,255,0.3); border-radius: 6px;">
+                        <strong>${s.subjectName}</strong><br>
+                        <small>👨‍🏫 Teacher: ${s.teacherName}</small><br>
+                        <small>📍 Distance: ${s.distance}m</small><br>
+                        <small>🏛️ ${s.classInfo.name} - ${s.classInfo.building}</small>
+                    </div>
+                `).join('')}
+            </div>
+            <p style="margin-top: 10px; font-size: 13px;">Move closer to the classroom to auto check-in</p>
+        `;
+    }
+}
+function updateCheckInStatus(title, message, status) {
+    const card = document.getElementById('auto-checkin-card');
+    if (!card) return;
+    const icon = status === 'active' ? '✅' : '📍';
+    card.className = `auto-checkin-status ${status}`;
+    card.innerHTML = `<div class="status-icon">${icon}</div><h3>${title}</h3><p>${message}</p>`;
+}
+
+function playSuccessSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)(), osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); 
+        gain.connect(ctx.destination); 
+        osc.frequency.value = 800; 
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, ctx.currentTime); 
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start(ctx.currentTime); 
+        osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {}
+}
+// ================== SIMPLIFIED TEACHER FUNCTIONS ==================
+async function loadTeacher() {
+    const dash = document.getElementById('teacher-dashboard');
+    dash.classList.add('active');
+    
+    // Set teacher name
+    if (document.getElementById('teacher-name')) {
+        document.getElementById('teacher-name').textContent = currentUser.name;
+    }
+    
+    // Reset steps
+    document.getElementById('step1').className = 'step active';
+    document.getElementById('step2').className = 'step';
+    document.getElementById('step3').className = 'step';
+    
+    // Show take attendance tab by default
+    document.getElementById('tab-take-attendance').style.display = 'block';
+    document.getElementById('tab-history-edit').style.display = 'none';
+    
+    // Load subjects assigned to this teacher
+    await loadTeacherSubjects();
+}
+
+// NEW: Load only subjects assigned to the teacher
+async function loadTeacherSubjects() {
+    loading(true);
+    try {
+        // Fetch subjects assigned to this teacher
+        const subjects = await api('/teacher/my-subjects');
+        
+        if (!subjects || subjects.length === 0) {
+            document.getElementById('teacher-content').innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>No subjects assigned!</strong> Please contact the administrator to assign subjects to you.
+                </div>
+            `;
+            loading(false);
+            return;
+        }
+        
+        // Display subjects as cards with full details
+        document.getElementById('teacher-content').innerHTML = `
+            <h3 style="margin-bottom: 20px;">
+                <i class="fas fa-book"></i> Select Your Subject (${subjects.length} available)
+            </h3>
+            <div class="selection-grid">
+                ${subjects.map(subject => `
+                    <div class="subject-selection-card" onclick='selectSubjectSimplified(${JSON.stringify(subject).replace(/'/g, "&apos;")})'>
+                        <div class="subject-card-header">
+                            <div class="subject-name">${subject.subject_name}</div>
+                            <div class="subject-code">${subject.subject_code}</div>
+                        </div>
+                        <div class="subject-card-details">
+                            <span class="subject-badge badge-dept">
+                                <i class="fas fa-building"></i> ${subject.dept_name}
+                            </span>
+                            <span class="subject-badge badge-program">
+                                <i class="fas fa-graduation-cap"></i> ${subject.program_type}
+                            </span>
+                            <span class="subject-badge badge-semester">
+                                <i class="fas fa-calendar"></i> Semester ${subject.semester}
+                            </span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+    } catch (error) {
+        document.getElementById('teacher-content').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <strong>Error loading subjects:</strong> ${error.message}
+            </div>
+        `;
+    } finally {
+        loading(false);
+    }
+}
+
+// NEW: Simplified subject selection - goes directly to class selection
+async function selectSubjectSimplified(subject) {
+    // Store selected subject data
+    window.selectedSubjectData = subject;
+    selectedSubject = subject.subject_id;
+    selectedDepartment = subject.dept_id;
+    selectedSemester = subject.semester;
+    
+    // Mark step 1 complete, activate step 2
+    document.getElementById('step1').classList.add('completed');
+    document.getElementById('step2').classList.add('active');
+    
+    loading(true);
+    try {
+        const classes = await api('/teacher/classes');
+        
+        if (!classes.length) {
+            document.getElementById('teacher-content').innerHTML = `
+                <button class="btn btn-secondary" onclick="loadTeacher()">
+                    <i class="fas fa-arrow-left"></i> Back to Subjects
+                </button>
+                <div class="alert alert-warning" style="margin-top: 20px;">
+                    <i class="fas fa-door-open"></i> 
+                    <strong>No classrooms available.</strong> Please contact the administrator.
+                </div>
+            `;
+            loading(false);
+            return;
+        }
+        
+        document.getElementById('teacher-content').innerHTML = `
+            <button class="btn btn-secondary" onclick="loadTeacher()">
+                <i class="fas fa-arrow-left"></i> Back to Subjects
+            </button>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+                <h4 style="margin: 0 0 8px 0; color: #667eea;">
+                    <i class="fas fa-book"></i> ${subject.subject_name} (${subject.subject_code})
+                </h4>
+                <p style="margin: 0; color: #666; font-size: 14px;">
+                    <i class="fas fa-building"></i> ${subject.dept_name} • 
+                    <i class="fas fa-graduation-cap"></i> ${subject.program_type} • 
+                    <i class="fas fa-calendar"></i> Semester ${subject.semester}
+                </p>
+            </div>
+            
+            <h3><i class="fas fa-door-open"></i> Select Classroom</h3>
+            <div class="selection-grid">
+                ${classes.map(c => `
+                    <div class="selection-card" onclick="selectClassSimplified(${c.id}, '${c.name.replace(/'/g, "\\'")}', '${c.building.replace(/'/g, "\\'")}')">
+                        <h3><i class="fas fa-door-open"></i></h3>
+                        <h3>${c.name}</h3>
+                        <p style="color:#666; margin-top: 8px;">${c.building} - ${c.room_number}</p>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+// NEW: Simplified class selection
+// NEW: Go back to class selection from mode selection
+function backToClassSelection() {
+    const subject = window.selectedSubjectData;
+    selectSubjectSimplified(subject);
+}
+function selectClassSimplified(classId, className, building) {
+    selectedClass = classId;
+    
+    document.getElementById('step2').classList.add('completed');
+    document.getElementById('step3').classList.add('active');
+    
+    const subject = window.selectedSubjectData;
+    
+    document.getElementById('teacher-content').innerHTML = `
+        <button class="btn btn-secondary" onclick="backToClassSelection()">
+    <i class="fas fa-arrow-left"></i> Back to Classes
+</button>
+
+        
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+            <h4 style="margin: 0 0 10px 0; color: #667eea;">
+                <i class="fas fa-book"></i> ${subject.subject_name} (${subject.subject_code})
+            </h4>
+            <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">
+                <i class="fas fa-building"></i> ${subject.dept_name} • 
+                <i class="fas fa-graduation-cap"></i> ${subject.program_type} • 
+                <i class="fas fa-calendar"></i> Semester ${subject.semester}
+            </p>
+            <p style="margin: 0; color: #666; font-size: 14px;">
+                <i class="fas fa-door-open"></i> <strong>Classroom:</strong> ${className} - ${building}
+            </p>
+        </div>
+        
+        <h3><i class="fas fa-clipboard-check"></i> Choose Attendance Mode</h3>
+        <div class="selection-grid">
+            <div class="mode-card" onclick="selectMode('geo')">
+                <i class="fas fa-map-marker-alt" style="color: #4caf50;"></i>
+                <h3>📍 Geo-Fenced</h3>
+                <p style="margin-top: 10px; color: #666;">Students automatically check-in via GPS when they enter the classroom area</p>
+            </div>
+            <div class="mode-card" onclick="selectMode('manual')">
+                <i class="fas fa-hand-pointer" style="color: #667eea;"></i>
+                <h3>✏️ Manual</h3>
+                <p style="margin-top: 10px; color: #666;">Mark attendance manually for each student</p>
+            </div>
+        </div>
+    `;
+}
+
+async function selectMode(mode) {
+    selectedMode = mode;
+    mode === 'geo' ? await startGeoSession() : await loadManualMode();
+}
+// ================== GEO SESSION FUNCTIONS ==================
+async function startGeoSession() {
+    loading(true);
+    try {
+        const result = await api('/teacher/geo-session/start', 'POST', {
+            subjectId: selectedSubject,
+            classId: selectedClass,
+            departmentId: selectedDepartment,
+            semester: selectedSemester
+        });
+        currentSessionId = result.sessionId;
+        await displayGeoSession();
+        sessionInterval = setInterval(refreshSession, 3000);
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+async function displayGeoSession() {
+    try {
+        const { session } = await api('/teacher/geo-session/' + currentSessionId);
+        const subject = window.selectedSubjectData;
+        
+        document.getElementById('teacher-content').innerHTML = `
+            <div class="live-session">
+                <h3><span class="live-badge">🔴 LIVE SESSION</span> ${session.classInfo.name} - ${session.classInfo.building}</h3>
+                <div class="stats-bar">
+                    <div class="stat-box"><div class="number">${session.stats.present}</div><div>✅ Present</div></div>
+                    <div class="stat-box"><div class="number">${session.stats.absent}</div><div>❌ Absent</div></div>
+                    <div class="stat-box"><div class="number">${session.stats.unmarked}</div><div>⏳ Waiting</div></div>
+                    <div class="stat-box"><div class="number">${session.stats.total}</div><div>👥 Total</div></div>
+                </div>
+                <button class="btn btn-danger" onclick="endGeoSession()" style="width:100%; padding: 16px;">
+                    <i class="fas fa-stop-circle"></i> End Session & Save Attendance
+                </button>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #667eea;">
+                <p style="margin: 0; color: #666; font-size: 13px;">
+                    <strong>${subject.subject_name}</strong> • ${subject.dept_name} • ${subject.program_type} • Sem ${subject.semester}
+                </p>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                Students will automatically check-in when they enter the classroom geo-fence. You can also manually mark students below.
+            </div>
+            
+            <input type="text" class="search-box" placeholder="🔍 Search by name or roll number..." onkeyup="filterStudents(this.value)">
+            
+            <div id="students-list">
+                ${session.students.map(s => `
+                    <div class="student-item ${s.status}" data-name="${s.name.toLowerCase()}" data-roll="${(s.roll_number || '').toLowerCase()}">
+                        <div>
+                            <div class="student-name">${s.name}</div>
+                            <div class="student-roll">${s.roll_number || 'No Roll Number'}</div>
+                        </div>
+                        <div class="student-status">
+                           ${s.status === 'present' ? '<span class="status-badge present" style="font-size: 14px; padding: 10px 16px;">✅ PRESENT</span>' :
+  s.status === 'absent' ? '<span class="status-badge absent" style="font-size: 14px; padding: 10px 16px;">❌ ABSENT</span>' :
+  '<span class="status-badge unmarked" style="font-size: 14px; padding: 10px 16px;">⏳ WAITING</span>'}
+                            <button class="btn btn-success" onclick="markManual(${s.id}, 'present')" ${s.status === 'present' ? 'disabled' : ''}>Present</button>
+                            <button class="btn btn-danger" onclick="markManual(${s.id}, 'absent')" ${s.status === 'absent' ? 'disabled' : ''}>Absent</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (error) {
+        console.error('Display error:', error);
+    }
+}
+
+async function refreshSession() {
+    if (!currentSessionId) return;
+    await displayGeoSession();
+}
+
+async function markManual(studentId, status) {
+    try {
+        await api('/teacher/geo-session/mark-manual', 'POST', {
+            sessionId: currentSessionId,
+            studentId: studentId,
+            status: status
+        });
+        await displayGeoSession();
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+async function endGeoSession() {
+    if (!confirm('⚠️ End this session and save all attendance records?')) return;
+    
+    if (sessionInterval) {
+        clearInterval(sessionInterval);
+        sessionInterval = null;
+    }
+    
+    loading(true);
+    try {
+        // Get session stats before ending
+        const { session } = await api('/teacher/geo-session/' + currentSessionId);
+        const presentCount = session.students.filter(s => s.status === 'present').length;
+        const absentCount = session.students.filter(s => s.status === 'absent').length;
+        const unmarkedCount = session.students.filter(s => s.status === 'unmarked').length;
+        
+        // End the session
+        await api('/teacher/geo-session/end', 'POST', { sessionId: currentSessionId });
+        
+        // Show detailed summary
+        alert(`✅ Session Ended Successfully!
+
+📊 Attendance Summary:
+✅ Present: ${presentCount}
+❌ Absent: ${absentCount}
+${unmarkedCount > 0 ? `⚠️ Auto-marked Absent: ${unmarkedCount} (didn't check-in)` : ''}
+
+All records have been saved to the database.`);
+        
+        currentSessionId = null;
+        await loadTeacher();
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+// ================== MANUAL MODE FUNCTIONS ==================
+async function loadManualMode() {
+    loading(true);
+    try {
+        const students = await api('/teacher/students?deptId=' + selectedDepartment + '&semester=' + selectedSemester);
+        
+        if (!students.length) {
+            const subject = window.selectedSubjectData;
+            document.getElementById('teacher-content').innerHTML = `
+                <button class="btn btn-secondary" onclick="selectClassSimplified(${selectedClass}, '', '')">
+                    <i class="fas fa-arrow-left"></i> Back to Mode Selection
+                </button>
+                <div class="alert alert-warning" style="margin-top: 20px;">
+                    <i class="fas fa-user-slash"></i> 
+                    <strong>No students found!</strong> There are no students enrolled in ${subject.dept_name} - Semester ${subject.semester}.
+                </div>
+            `;
+            loading(false);
+            return;
+        }
+        
+        const subject = window.selectedSubjectData;
+        
+        // Initialize attendance - all present by default
+        let attendance = {};
+        students.forEach(s => { attendance[s.id] = true; });
+        window.manualAttendance = attendance;
+        
+        document.getElementById('teacher-content').innerHTML = `
+            <button class="btn btn-secondary" onclick="selectClassSimplified(${selectedClass}, '', '')">
+                <i class="fas fa-arrow-left"></i> Back to Mode Selection
+            </button>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+                <h4 style="margin: 0 0 8px 0; color: #667eea;">
+                    <i class="fas fa-book"></i> ${subject.subject_name} (${subject.subject_code})
+                </h4>
+                <p style="margin: 0; color: #666; font-size: 14px;">
+                    ${subject.dept_name} • ${subject.program_type} • Semester ${subject.semester}
+                </p>
+            </div>
+            
+            <h3><i class="fas fa-clipboard-list"></i> Mark Attendance - Manual Mode</h3>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Total Students: ${students.length}</strong> • Click buttons to toggle Present/Absent • All students are marked Present by default
+            </div>
+            
+            <input type="text" class="search-box" placeholder="🔍 Search by name or roll number..." onkeyup="filterStudents(this.value)">
+            
+            <div id="students-list">
+                ${students.map(s => `
+                    <div class="student-item" data-name="${s.name.toLowerCase()}" data-roll="${(s.roll_number || '').toLowerCase()}">
+                        <div>
+                            <div class="student-name">${s.name}</div>
+                            <div class="student-roll">${s.roll_number || 'No Roll Number'}</div>
+                        </div>
+                        <button class="btn btn-success" onclick="toggleManual(${s.id}, this)" data-student-id="${s.id}">
+                            ✅ Present
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <button class="btn btn-success" style="width:100%; margin-top: 20px; padding: 16px; font-size: 16px;" onclick="submitManual()">
+                <i class="fas fa-check-circle"></i> Submit Attendance for ${students.length} Students
+            </button>
+        `;
+        
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+
+function toggleManual(studentId, button) {
+    window.manualAttendance[studentId] = !window.manualAttendance[studentId];
+    
+    if (window.manualAttendance[studentId]) {
+        button.className = 'btn btn-success';
+        button.innerHTML = '✅ Present';
+        button.parentElement.classList.remove('absent');
+        button.parentElement.classList.add('present');
+    } else {
+        button.className = 'btn btn-danger';
+        button.innerHTML = '❌ Absent';
+        button.parentElement.classList.remove('present');
+        button.parentElement.classList.add('absent');
+    }
+}
+
+async function submitManual() {
+    const presentCount = Object.values(window.manualAttendance).filter(v => v).length;
+    const absentCount = Object.values(window.manualAttendance).filter(v => !v).length;
+    
+    if (!confirm(`📊 Submit attendance?\n\n✅ Present: ${presentCount}\n❌ Absent: ${absentCount}\n\nThis will save the attendance records.`)) {
+        return;
+    }
+    
+    loading(true);
+    try {
+        const records = Object.keys(window.manualAttendance).map(studentId => ({
+            studentId: parseInt(studentId),
+            isPresent: window.manualAttendance[studentId]
+        }));
+        
+        await api('/teacher/attendance/submit', 'POST', {
+            subjectId: selectedSubject,
+            classId: selectedClass,
+            attendance: records
+        });
+        
+        alert(`✅ Attendance submitted successfully!\n\nPresent: ${presentCount} | Absent: ${absentCount}`);
+        await loadTeacher();
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+// Global variable to store history data
+let teacherHistoryRecords = [];
+
+// Switch between tabs
+function switchTeacherTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('.teacher-tabs button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Show/hide tab content
+    if (tab === 'take') {
+        document.getElementById('tab-take-attendance').style.display = 'block';
+        document.getElementById('tab-history-edit').style.display = 'none';
+    } else if (tab === 'history') {
+        document.getElementById('tab-take-attendance').style.display = 'none';
+        document.getElementById('tab-history-edit').style.display = 'block';
+        
+        // Load subjects dropdown and set default dates
+        loadSubjectsForFilter();
+        setDefaultDates();
+    }
+}
+
+// Set default date range (last 30 days)
+function setDefaultDates() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+    
+    document.getElementById('filter-end-date').value = today.toISOString().split('T')[0];
+    document.getElementById('filter-start-date').value = thirtyDaysAgo.toISOString().split('T')[0];
+}
+
+// Load subjects for filter dropdown
+async function loadSubjectsForFilter() {
+    try {
+        const subjects = await api('/teacher/my-subjects');
+        const dropdown = document.getElementById('filter-subject');
+        
+        dropdown.innerHTML = '<option value="">All Subjects</option>' + 
+            subjects.map(s => `<option value="${s.subject_id}">${s.subject_name} (${s.subject_code})</option>`).join('');
+    } catch (error) {
+        console.error('Error loading subjects:', error);
+    }
+}
+
+// Clear all filters
+function clearFilters() {
+    document.getElementById('filter-subject').value = '';
+    document.getElementById('filter-student-name').value = '';
+    setDefaultDates();
+    
+    // Clear data
+    teacherHistoryRecords = [];
+    groupedSessions = {};
+    
+    // Hide view toggle
+    document.getElementById('view-toggle').style.display = 'none';
+    
+    // Clear both views
+    document.getElementById('session-view-container').innerHTML = '';
+    document.getElementById('history-container').innerHTML = `
+        <div style="text-align: center; padding: 60px 20px; color: #999;">
+            <i class="fas fa-clipboard-list" style="font-size: 60px; opacity: 0.3; margin-bottom: 15px;"></i>
+            <h3>No Records Loaded</h3>
+            <p>Select filters and click "Load History"</p>
+        </div>
+    `;
+    
+    // Hide stats
+    document.getElementById('summary-stats').style.display = 'none';
+    
+    // Reset to session view
+    currentView = 'session';
+    document.querySelectorAll('.view-toggle button').forEach((btn, index) => {
+        btn.classList.toggle('active', index === 0);
+    });
+}
+// Load attendance history
+async function loadHistory() {
+    const subjectId = document.getElementById('filter-subject').value;
+    const startDate = document.getElementById('filter-start-date').value;
+    const endDate = document.getElementById('filter-end-date').value;
+    const studentName = document.getElementById('filter-student-name').value.toLowerCase();
+    
+    // Validate dates
+    if (!startDate || !endDate) {
+        alert('⚠️ Please select both start and end dates');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        alert('⚠️ Start date cannot be after end date');
+        return;
+    }
+    
+    loading(true);
+    
+    try {
+        // Build API endpoint
+        let endpoint = `/teacher/attendance/records?startDate=${startDate}&endDate=${endDate}`;
+        if (subjectId) {
+            endpoint += `&subjectId=${subjectId}`;
+        }
+        
+        // Fetch records
+        const records = await api(endpoint);
+        
+        // Filter by student name if provided
+        teacherHistoryRecords = studentName 
+            ? records.filter(r => r.student_name.toLowerCase().includes(studentName))
+            : records;
+        
+        if (teacherHistoryRecords.length === 0) {
+            showEmptyMessage();
+            document.getElementById('view-toggle').style.display = 'none';
+            return;
+        }
+        
+        // Show view toggle
+        document.getElementById('view-toggle').style.display = 'flex';
+        
+        // Group by sessions
+        const sessions = groupRecordsBySessions(teacherHistoryRecords);
+        
+        // Display based on current view
+        if (currentView === 'session') {
+            displaySessionView(sessions);
+            document.getElementById('session-view-container').style.display = 'block';
+            document.getElementById('history-container').style.display = 'none';
+        } else {
+            displayHistory(teacherHistoryRecords);
+            document.getElementById('session-view-container').style.display = 'none';
+            document.getElementById('history-container').style.display = 'block';
+        }
+        
+        // Update stats
+        updateStats(teacherHistoryRecords);
+        
+    } catch (error) {
+        console.error('Error loading history:', error);
+        alert('❌ Error: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+// Show empty message
+function showEmptyMessage() {
+    document.getElementById('summary-stats').style.display = 'none';
+    document.getElementById('history-container').innerHTML = `
+        <div class="alert alert-info" style="margin-top: 20px;">
+            <i class="fas fa-info-circle"></i> 
+            <strong>No records found</strong> for the selected filters.
+        </div>
+    `;
+}
+
+// Update statistics
+function updateStats(records) {
+    const total = records.length;
+    const present = records.filter(r => r.status === 'present').length;
+    const absent = records.filter(r => r.status === 'absent').length;
+    const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+    
+    document.getElementById('total-records').textContent = total;
+    document.getElementById('present-count').textContent = present;
+    document.getElementById('absent-count').textContent = absent;
+    document.getElementById('attendance-percent').textContent = percentage + '%';
+    
+    document.getElementById('summary-stats').style.display = 'grid';
+}
+// Display history table
+function displayHistory(records) {
+    const container = document.getElementById('history-container');
+    
+    let html = `
+        <div style="margin-bottom: 15px; padding: 10px; background: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
+            <strong>💡 Tip:</strong> Click on the status badge (Present/Absent) to quickly toggle it!
+        </div>
+        
+        <div class="table-container">
+            <table class="history-table-teacher">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Subject</th>
+                        <th>Student Name</th>
+                        <th>Roll Number</th>
+                        <th>Class</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    records.forEach(record => {
+        const date = new Date(record.marked_at);
+        const dateStr = date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+        const timeStr = date.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true
+        });
+        
+        const statusClass = record.status === 'present' ? 'present' : 'absent';
+        const statusIcon = record.status === 'present' ? '✅' : '❌';
+        
+        html += `
+            <tr>
+                <td>
+                    <strong style="color: #667eea;">${dateStr}</strong><br>
+                    <small style="color: #999;">${timeStr}</small>
+                </td>
+                <td>
+                    <strong>${record.subject_name}</strong><br>
+                    <small style="color: #667eea; font-weight: 600;">${record.subject_code}</small>
+                </td>
+                <td><strong>${record.student_name}</strong></td>
+                <td>
+                    <span style="background: #667eea; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                        ${record.roll_number || 'N/A'}
+                    </span>
+                </td>
+                <td>
+                    ${record.class_name || 'N/A'}
+                    ${record.building ? `<br><small style="color: #999;">${record.building}</small>` : ''}
+                </td>
+                <td>
+                    <span class="status-badge-edit ${statusClass}" 
+                          onclick="editStatus(${record.attendance_id}, '${record.status}')"
+                          title="Click to change status">
+                        ${statusIcon} ${record.status.toUpperCase()}
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+// Edit status when clicking on badge
+async function editStatus(attendanceId, currentStatus) {
+    // Toggle status
+    const newStatus = currentStatus === 'present' ? 'absent' : 'present';
+    
+    // Confirm change
+    if (!confirm(`Change status from ${currentStatus.toUpperCase()} to ${newStatus.toUpperCase()}?`)) {
+        return;
+    }
+    
+    loading(true);
+    
+    try {
+        // Update via API
+        await api('/teacher/attendance/update-bulk', 'POST', {
+            updates: [{
+                attendanceId: attendanceId,
+                status: newStatus
+            }]
+        });
+        
+        // Update local data
+        const record = teacherHistoryRecords.find(r => r.attendance_id === attendanceId);
+        if (record) {
+            record.status = newStatus;
+        }
+        
+        // Refresh display
+        displayHistory(teacherHistoryRecords);
+        updateStats(teacherHistoryRecords);
+        
+        // Show success message
+        alert(`✅ Status updated to ${newStatus.toUpperCase()}`);
+        
+    } catch (error) {
+        alert('❌ Error updating status: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+// Export history to Excel
+function exportHistory() {
+    // Check if XLSX library is loaded
+    if (typeof XLSX === 'undefined') {
+        alert('❌ Excel export library not loaded. Please refresh the page.');
+        return;
+    }
+    
+    if (!teacherHistoryRecords || teacherHistoryRecords.length === 0) {
+        alert('⚠️ No data to export. Please load history first.');
+        return;
+    }
+    
+    try {
+        // Prepare data for export
+        const exportData = teacherHistoryRecords.map(record => {
+            const date = new Date(record.marked_at);
+            return {
+                'Date': date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                }),
+                'Time': date.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: true
+                }),
+                'Subject Name': record.subject_name,
+                'Subject Code': record.subject_code,
+                'Student Name': record.student_name,
+                'Roll Number': record.roll_number || 'N/A',
+                'Class': record.class_name || 'N/A',
+                'Building': record.building || 'N/A',
+                'Status': record.status.toUpperCase()
+            };
+        });
+        
+        // Create worksheet
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        
+        // Set column widths
+        const colWidths = [
+            { wch: 15 }, // Date
+            { wch: 10 }, // Time
+            { wch: 30 }, // Subject Name
+            { wch: 15 }, // Subject Code
+            { wch: 25 }, // Student Name
+            { wch: 15 }, // Roll Number
+            { wch: 20 }, // Class
+            { wch: 15 }, // Building
+            { wch: 10 }  // Status
+        ];
+        ws['!cols'] = colWidths;
+        
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Attendance History");
+        
+        // Generate filename
+        const teacherName = currentUser.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const startDate = document.getElementById('filter-start-date').value;
+        const endDate = document.getElementById('filter-end-date').value;
+        const filename = `${teacherName}_Attendance_${startDate}_to_${endDate}.xlsx`;
+        
+        // Download file
+        XLSX.writeFile(wb, filename);
+        
+        // Show success message
+        setTimeout(() => {
+            alert(`✅ Exported ${exportData.length} records to Excel!\n\nFile: ${filename}`);
+        }, 100);
+        
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('❌ Error exporting data: ' + error.message);
+    }
+}
+// Global variable for current view
+let currentView = 'session'; // 'session' or 'table'
+let groupedSessions = {};
+
+// Switch between session view and table view
+function switchView(view) {
+    currentView = view;
+    
+    // Update button states
+    document.querySelectorAll('.view-toggle button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    if (view === 'session') {
+        document.getElementById('session-view-container').style.display = 'block';
+        document.getElementById('history-container').style.display = 'none';
+    } else {
+        document.getElementById('session-view-container').style.display = 'none';
+        document.getElementById('history-container').style.display = 'block';
+    }
+}
+
+// Group records by actual session (same date, subject, class, and close time)
+function groupRecordsBySessions(records) {
+    groupedSessions = {};
+    
+    records.forEach(record => {
+        const date = new Date(record.marked_at);
+        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        // Round to nearest hour to group sessions together
+        const hourKey = date.getHours();
+        
+        // Session key: date + subject + class + hour
+        // This groups all students marked around the same time
+        const sessionKey = `${dateKey}_${record.subject_id}_${record.class_id || 0}_${hourKey}`;
+        
+        if (!groupedSessions[sessionKey]) {
+            // Create new session
+            groupedSessions[sessionKey] = {
+                sessionId: sessionKey,
+                date: record.marked_at,
+                subjectId: record.subject_id,
+                subjectName: record.subject_name,
+                subjectCode: record.subject_code,
+                classId: record.class_id,
+                className: record.class_name,
+                building: record.building,
+                students: []
+            };
+        }
+        
+        // Add student to this session (avoid duplicates)
+        const existingStudent = groupedSessions[sessionKey].students.find(
+            s => s.studentId === record.student_id
+        );
+        
+        if (!existingStudent) {
+            groupedSessions[sessionKey].students.push({
+                attendanceId: record.attendance_id,
+                studentId: record.student_id,
+                studentName: record.student_name,
+                rollNumber: record.roll_number,
+                status: record.status,
+                markedAt: record.marked_at
+            });
+        }
+    });
+    
+    return groupedSessions;
+}
+
+// Display sessions in card view
+function displaySessionView(sessions) {
+    const container = document.getElementById('session-view-container');
+    
+    const sessionArray = Object.values(sessions);
+    
+    if (sessionArray.length === 0) {
+        container.innerHTML = `
+            <div class="empty-sessions">
+                <i class="fas fa-calendar-times"></i>
+                <h3>No Sessions Found</h3>
+                <p>Try adjusting your filters</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Sort sessions by date (newest first)
+    sessionArray.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    let html = '';
+    
+    sessionArray.forEach(session => {
+        const date = new Date(session.date);
+        const dateStr = date.toLocaleDateString('en-US', { 
+            weekday: 'short',
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+        const timeStr = date.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true
+        });
+        
+        const totalStudents = session.students.length;
+        const presentCount = session.students.filter(s => s.status === 'present').length;
+        const absentCount = session.students.filter(s => s.status === 'absent').length;
+        const percentage = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0;
+        
+        html += `
+            <div class="session-card">
+                <!-- Session Header -->
+                <div class="session-header">
+                    <div class="session-info">
+                        <div class="session-title">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            ${session.subjectName}
+                            <span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                ${session.subjectCode}
+                            </span>
+                        </div>
+                        <div class="session-meta">
+                            <div class="session-meta-item">
+                                <i class="fas fa-calendar"></i>
+                                <strong>${dateStr}</strong>
+                            </div>
+                            <div class="session-meta-item">
+                                <i class="fas fa-clock"></i>
+                                ${timeStr}
+                            </div>
+                            <div class="session-meta-item">
+                                <i class="fas fa-door-open"></i>
+                                ${session.className || 'Online Class'}
+                                ${session.building ? ` - ${session.building}` : ''}
+                            </div>
+                            <div class="session-meta-item">
+                                <i class="fas fa-users"></i>
+                                ${totalStudents} Students
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Session Stats -->
+                    <div class="session-stats">
+                        <div class="session-stat">
+                            <div class="number">${totalStudents}</div>
+                            <div class="label">Total</div>
+                        </div>
+                        <div class="session-stat present">
+                            <div class="number">${presentCount}</div>
+                            <div class="label">Present</div>
+                        </div>
+                        <div class="session-stat absent">
+                            <div class="number">${absentCount}</div>
+                            <div class="label">Absent</div>
+                        </div>
+                        <div class="session-stat">
+                            <div class="number">${percentage}%</div>
+                            <div class="label">Rate</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Session Actions -->
+                <div class="session-actions">
+                    <button class="btn" onclick="toggleSessionDetails('${session.sessionId}')">
+                        <i class="fas fa-edit"></i> Edit This Session
+                    </button>
+                    <button class="btn btn-success" onclick="markAllPresent('${session.sessionId}')">
+                        <i class="fas fa-check-double"></i> All Present
+                    </button>
+                    <button class="btn btn-danger" onclick="markAllAbsent('${session.sessionId}')">
+                        <i class="fas fa-times-circle"></i> All Absent
+                    </button>
+                </div>
+                
+                <!-- Student List (Initially Hidden) -->
+                <div class="session-students" id="session-${session.sessionId}">
+                    ${renderStudentList(session.students, session.sessionId)}
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+// Render student list for a session
+function renderStudentList(students, sessionId) {
+    // Sort students by roll number
+    students.sort((a, b) => {
+        const rollA = a.rollNumber || '';
+        const rollB = b.rollNumber || '';
+        return rollA.localeCompare(rollB);
+    });
+    
+    let html = `
+        <div style="margin-bottom: 15px; font-weight: 600; color: #667eea; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-users"></i>
+            Student List (${students.length} students)
+        </div>
+    `;
+    
+    students.forEach(student => {
+        const isPresentActive = student.status === 'present' ? 'active' : '';
+        const isAbsentActive = student.status === 'absent' ? 'active' : '';
+        
+        html += `
+            <div class="student-row">
+                <div class="student-info-row">
+                    <span class="student-name-row">${student.studentName}</span>
+                    <span class="student-roll-row">${student.rollNumber || 'No Roll'}</span>
+                </div>
+                <div class="status-toggle">
+                    <button class="btn-present ${isPresentActive}"
+                            onclick="updateStudentStatus('${sessionId}', ${student.attendanceId}, 'present')">
+                        ✅ Present
+                    </button>
+                    <button class="btn-absent ${isAbsentActive}"
+                            onclick="updateStudentStatus('${sessionId}', ${student.attendanceId}, 'absent')">
+                        ❌ Absent
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 2px dashed #e0e0e0; text-align: right;">
+            <button class="btn btn-success" onclick="saveSessionChanges('${sessionId}')" style="padding: 12px 24px; font-size: 14px;">
+                <i class="fas fa-save"></i> Save All Changes
+            </button>
+        </div>
+    `;
+    
+    return html;
+}
+// Toggle session details (expand/collapse)
+function toggleSessionDetails(sessionId) {
+    const detailsDiv = document.getElementById(`session-${sessionId}`);
+    detailsDiv.classList.toggle('expanded');
+}
+
+// Update individual student status in session
+function updateStudentStatus(sessionId, attendanceId, newStatus) {
+    // Find the session and student
+    const session = groupedSessions[sessionId];
+    if (!session) return;
+    
+    const student = session.students.find(s => s.attendanceId === attendanceId);
+    if (!student) return;
+    
+    // Update status locally
+    student.status = newStatus;
+    student.modified = true; // Mark as modified
+    
+    // Update UI - refresh the student list
+    const detailsDiv = document.getElementById(`session-${sessionId}`);
+    detailsDiv.innerHTML = renderStudentList(session.students, sessionId);
+    
+    // Keep it expanded
+    detailsDiv.classList.add('expanded');
+}
+
+// Mark all students in session as present
+function markAllPresent(sessionId) {
+    const session = groupedSessions[sessionId];
+    if (!session) return;
+    
+    if (!confirm(`Mark all ${session.students.length} students as PRESENT?`)) {
+        return;
+    }
+    
+    session.students.forEach(student => {
+        student.status = 'present';
+        student.modified = true;
+    });
+    
+    // Update UI
+    const detailsDiv = document.getElementById(`session-${sessionId}`);
+    detailsDiv.innerHTML = renderStudentList(session.students, sessionId);
+    detailsDiv.classList.add('expanded');
+}
+
+// Mark all students in session as absent
+function markAllAbsent(sessionId) {
+    const session = groupedSessions[sessionId];
+    if (!session) return;
+    
+    if (!confirm(`Mark all ${session.students.length} students as ABSENT?`)) {
+        return;
+    }
+    
+    session.students.forEach(student => {
+        student.status = 'absent';
+        student.modified = true;
+    });
+    
+    // Update UI
+    const detailsDiv = document.getElementById(`session-${sessionId}`);
+    detailsDiv.innerHTML = renderStudentList(session.students, sessionId);
+    detailsDiv.classList.add('expanded');
+}
+
+// Save all changes for a session
+async function saveSessionChanges(sessionId) {
+    const session = groupedSessions[sessionId];
+    if (!session) return;
+    
+    // Get modified students
+    const modifiedStudents = session.students.filter(s => s.modified);
+    
+    if (modifiedStudents.length === 0) {
+        alert('ℹ️ No changes to save');
+        return;
+    }
+    
+    if (!confirm(`Save changes for ${modifiedStudents.length} student(s)?`)) {
+        return;
+    }
+    
+    loading(true);
+    
+    try {
+        // Prepare updates
+        const updates = modifiedStudents.map(student => ({
+            attendanceId: student.attendanceId,
+            status: student.status
+        }));
+        
+        // Send to API
+        await api('/teacher/attendance/update-bulk', 'POST', { updates });
+        
+        // Clear modified flags
+        session.students.forEach(s => delete s.modified);
+        
+        // Update the main data
+        modifiedStudents.forEach(student => {
+            const record = teacherHistoryRecords.find(r => r.attendance_id === student.attendanceId);
+            if (record) {
+                record.status = student.status;
+            }
+        });
+        
+        // Refresh displays
+        displaySessionView(groupedSessions);
+        updateStats(teacherHistoryRecords);
+        
+        alert(`✅ Successfully updated ${modifiedStudents.length} record(s)!`);
+        
+    } catch (error) {
+        alert('❌ Error saving changes: ' + error.message);
+    } finally {
+        loading(false);
+    }
+}
+</script>
+<script src="student-history.js"></script>
+</body>
+</html>
